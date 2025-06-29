@@ -14,7 +14,7 @@ type AppUser = {
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>;
+  login: (username: string, password:string) => Promise<boolean>;
   logout: () => void;
   setUserName: (name: string) => void;
 }
@@ -75,19 +75,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const result = await loginAction(username, password);
     if (result.success) {
+      setShowSplashScreen(true);
+      router.push("/");
+
       try {
         localStorage.setItem("isAuthenticated", "true");
         const savedName = localStorage.getItem('userName');
         setUser({ username: "OK-Family-2025", name: savedName });
+
         if (!savedName) {
-          setNamePromptOpen(true);
+          setTimeout(() => {
+            setNamePromptOpen(true);
+          }, 2500); // Delay to match splash screen fade out
         }
       } catch (error) {
         setUser({ username: "OK-Family-2025", name: null });
-        setNamePromptOpen(true);
+        setTimeout(() => {
+          setNamePromptOpen(true);
+        }, 2500); // Delay to match splash screen fade out
       }
-      setShowSplashScreen(true);
-      router.push("/");
+      
       return true;
     }
     return false;
