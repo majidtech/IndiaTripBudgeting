@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Expense } from "@/lib/types";
 import { CATEGORIES } from "@/lib/constants";
 import { formatDistanceToNow } from "date-fns";
+import { IndianRupee } from "lucide-react";
 
 interface RecentTransactionsProps {
   expenses: Expense[];
@@ -49,7 +50,10 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      ₹{expense.amount.toLocaleString('en-IN')}
+                      <div className="inline-flex items-center justify-end gap-1">
+                        <IndianRupee className="h-4 w-4" />
+                        {expense.amount.toLocaleString('en-IN')}
+                      </div>
                     </TableCell>
                   </TableRow>
                 );

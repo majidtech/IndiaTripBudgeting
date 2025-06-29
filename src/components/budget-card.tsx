@@ -48,9 +48,11 @@ export function BudgetCard({ totalBudget, totalSpent, onSetBudget }: BudgetCardP
         </p>
         <Progress value={progress} className="mt-4" />
         <div className="mt-2 text-sm flex justify-between">
-          <span className="text-muted-foreground">Spent: ₹{totalSpent.toLocaleString('en-IN')}</span>
-          <span className={remaining < 0 ? "text-destructive" : ""}>
-            Remaining: ₹{remaining.toLocaleString('en-IN')}
+          <span className="text-muted-foreground flex items-center gap-1">
+            Spent: <IndianRupee className="h-3.5 w-3.5" />{totalSpent.toLocaleString('en-IN')}
+          </span>
+          <span className={`flex items-center gap-1 ${remaining < 0 ? "text-destructive" : ""}`}>
+            Remaining: <IndianRupee className="h-3.5 w-3.5" />{remaining.toLocaleString('en-IN')}
           </span>
         </div>
         <Popover>
