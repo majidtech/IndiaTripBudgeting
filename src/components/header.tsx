@@ -7,20 +7,12 @@ import { useAuth } from "@/context/auth-context";
 import { LogOut } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import type { User } from "firebase/auth";
-
-function isFirebaseUser(user: any): user is User {
-    return user && typeof user.uid === 'string';
-}
 
 export function AppHeader() {
   const { user, logout } = useAuth();
 
   const getDisplayName = () => {
     if (!user) return "";
-    if (isFirebaseUser(user)) {
-      return user.displayName || user.email || "User";
-    }
     return user.username;
   };
 
@@ -34,13 +26,6 @@ export function AppHeader() {
     return name[0]?.toUpperCase() || "U";
   };
   
-  const getAvatarUrl = () => {
-      if (isFirebaseUser(user) && user.photoURL) {
-          return user.photoURL;
-      }
-      return undefined;
-  }
-
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
       <nav className="flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6 flex-1">
@@ -57,7 +42,7 @@ export function AppHeader() {
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                     <Avatar className="h-9 w-9">
-                        <AvatarImage src={getAvatarUrl()} alt={getDisplayName()} />
+                        <AvatarImage src={undefined} alt={getDisplayName()} />
                         <AvatarFallback>{getInitials()}</AvatarFallback>
                     </Avatar>
                 </Button>
@@ -66,7 +51,6 @@ export function AppHeader() {
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
-                        {isFirebaseUser(user) && <p className="text-xs leading-none text-muted-foreground">{user.email}</p>}
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

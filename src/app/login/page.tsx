@@ -6,14 +6,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { GoogleIcon, Logo } from "@/components/icons";
+import { Logo } from "@/components/icons";
 import { useAuth } from "@/context/auth-context";
-import { isFirebaseConfigured } from "@/lib/firebase";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login, signInWithGoogle } = useAuth();
+  const { login } = useAuth();
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -26,11 +25,6 @@ export default function LoginPage() {
         variant: "destructive",
       });
     }
-  };
-
-  const handleGoogleSignIn = async () => {
-    // The signInWithGoogle function from the context now handles its own toasts
-    await signInWithGoogle();
   };
 
   return (
@@ -70,25 +64,6 @@ export default function LoginPage() {
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
             <Button type="submit" className="w-full">Sign in</Button>
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">
-                  Or continue with
-                </span>
-              </div>
-            </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button" disabled={!isFirebaseConfigured}>
-              <GoogleIcon className="mr-2 h-4 w-4" />
-              Sign in with Google
-            </Button>
-             {!isFirebaseConfigured && (
-                <p className="text-xs text-center text-muted-foreground -mt-2 px-4">
-                    Google Sign-In is unavailable. Please add Firebase credentials to the .env file.
-                </p>
-            )}
           </CardFooter>
         </form>
       </Card>
