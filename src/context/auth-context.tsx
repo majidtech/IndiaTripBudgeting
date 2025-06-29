@@ -32,11 +32,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (showSplashScreen) {
+      // After 2 seconds, start the fade out.
       const fadeTimer = setTimeout(() => setIsFadingOut(true), 2000);
+      
+      // After the fade out animation completes (500ms), remove the element from the DOM.
+      // A small buffer (100ms) is added to ensure the animation finishes smoothly.
       const hideTimer = setTimeout(() => {
         setShowSplashScreen(false);
-        setIsFadingOut(false);
-      }, 2500);
+        setIsFadingOut(false); // Reset state for next time
+      }, 2600); // 2000ms delay + 500ms fade + 100ms buffer
+
       return () => {
         clearTimeout(fadeTimer);
         clearTimeout(hideTimer);
@@ -86,13 +91,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!savedName) {
           setTimeout(() => {
             setNamePromptOpen(true);
-          }, 2500); // Delay to match splash screen fade out
+          }, 2600); // Delay to match splash screen fade out
         }
       } catch (error) {
         setUser({ username: "OK-Family-2025", name: null });
         setTimeout(() => {
           setNamePromptOpen(true);
-        }, 2500); // Delay to match splash screen fade out
+        }, 2600); // Delay to match splash screen fade out
       }
       
       return true;
@@ -132,7 +137,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           <div
               className={cn(
                   'fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white text-5xl font-bold transition-opacity duration-500',
-                  isFadingOut ? 'opacity-0' : 'opacity-100'
+                  isFadingOut ? 'opacity-0 pointer-events-none' : 'opacity-100'
               )}
           >
               Created by Adil :)
