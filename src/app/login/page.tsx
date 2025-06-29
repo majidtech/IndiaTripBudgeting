@@ -31,8 +31,8 @@ export default function LoginPage() {
     const success = await signInWithGoogle();
     if (!success) {
       toast({
-        title: "Sign-in Failed",
-        description: "Could not sign in with Google. Please try again.",
+        title: "Access Denied",
+        description: "You are not authorized to access this application.",
         variant: "destructive",
       });
     }

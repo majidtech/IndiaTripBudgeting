@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, UserCredential } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { loginAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
@@ -16,6 +16,12 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+const authorizedEmails = [
+  'abduladil.usa@gmail.com',
+  'majid.usa@gmail.com',
+  'shabana.usa@gmail.com',
+];
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | { username: string } | null>(null);
@@ -47,7 +53,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
-            setUser(firebaseUser);
+            // Check if the signed-in user is authorized
+            if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email)) {
+                setUser(firebaseUser);
+            } else {
+                // If not authorized, sign them out and set user to null
+                signOut(auth);
+                setUser(null);
+            }
             setLoading(false);
         } else {
             // If no firebase user, check for our custom auth
@@ -88,10 +101,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
-        setShowSplashScreen(true);
-        // onAuthStateChanged will handle setting the user and the useEffect will handle the redirect
-        return true;
+        const result: UserCredential = await signInWithPopup(auth, provider);
+        const firebaseUser = result.user;
+
+        // Check if the signed-in user is authorized
+        if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email)) {
+            setShowSplashScreen(true);
+            return true;
+        } else {
+            // If not authorized, sign them out immediately
+            await signOut(auth);
+            return false;
+        }
     } catch (error) {
         console.error("Google sign-in error", error);
         return false;
