@@ -2,8 +2,8 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, UserCredential } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
 import { loginAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -53,9 +53,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showSplashScreen]);
 
   useEffect(() => {
-    // The source of truth is the 'auth' object. If it's null, Firebase is not available.
     if (!auth) {
-      // Handle only non-Firebase auth if not configured/initialized
       try {
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
         if (isAuthenticated) {
@@ -70,33 +68,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Logic for when Firebase IS configured and initialized
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
-        if (firebaseUser) {
-            // Check if the signed-in user is authorized
-            if (firebaseUser.email && authorizedEmails.map(e => e.toLowerCase()).includes(firebaseUser.email.toLowerCase())) {
-                setUser(firebaseUser);
-            } else {
-                // If not authorized, sign them out and set user to null
-                signOut(auth);
-                setUser(null);
-            }
-            setLoading(false);
-        } else {
-            // If no firebase user, check for our custom auth
-            try {
-                const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-                if (isAuthenticated) {
-                    setUser({ username: "OK-Family-2025" });
-                } else {
-                    setUser(null);
-                }
-            } catch (error) {
-                // localStorage is not available
-                setUser(null);
-            }
-            setLoading(false);
+      if (firebaseUser) {
+        setUser(firebaseUser);
+      } else {
+        try {
+          const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+          if (isAuthenticated) {
+            setUser({ username: "OK-Family-2025" });
+          } else {
+            setUser(null);
+          }
+        } catch (error) {
+          setUser(null);
         }
+      }
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -119,11 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
-    // Again, the source of truth is the 'auth' object.
     if (!auth) {
       toast({
         title: "Google Sign-In Is Not Available",
-        description: "The application's Firebase credentials have not been configured correctly.",
+        description: "Firebase has not been configured.",
         variant: "destructive",
       });
       return false;
@@ -131,33 +117,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const provider = new GoogleAuthProvider();
     try {
-        const result: UserCredential = await signInWithPopup(auth, provider);
-        const firebaseUser = result.user;
+      const result = await signInWithPopup(auth, provider);
+      const firebaseUser = result.user;
 
-        // Check if the signed-in user is authorized
-        if (firebaseUser.email && authorizedEmails.map(e => e.toLowerCase()).includes(firebaseUser.email.toLowerCase())) {
-            setShowSplashScreen(true);
-            return true;
-        } else {
-            // If not authorized, sign them out immediately
-            await signOut(auth);
-            return false;
-        }
-    } catch (error) {
-        console.error("Google sign-in error", error);
+      if (!firebaseUser.email || !authorizedEmails.map(e => e.toLowerCase()).includes(firebaseUser.email.toLowerCase())) {
+        await signOut(auth);
+        toast({
+          title: "Access Denied",
+          description: "You are not authorized to access this application.",
+          variant: "destructive",
+        });
         return false;
+      }
+      
+      setShowSplashScreen(true);
+      return true;
+
+    } catch (error: any) {
+      console.error("Google sign-in error", error);
+      let description = "An unknown error occurred during sign-in.";
+      
+      if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+        // Don't show a toast if the user intentionally closed the popup.
+        return false;
+      } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-disabled') {
+        description = "The credential you provided is incorrect or the user is disabled."
+      } else if (error.message) {
+        description = error.message;
+      }
+      
+      toast({
+        title: "Sign-In Failed",
+        description: description,
+        variant: "destructive",
+      });
+      return false;
     }
   }, [toast]);
 
   const logout = useCallback(async () => {
     try {
-      // Check if auth object exists before trying to sign out
       if (auth && auth.currentUser) {
         await signOut(auth);
       }
       localStorage.removeItem("isAuthenticated");
     } catch (error) {
-        // localStorage is not available or firebase error
+      // localStorage is not available or firebase error
     }
     setUser(null);
     router.push('/login');

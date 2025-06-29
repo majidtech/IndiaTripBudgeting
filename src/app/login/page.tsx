@@ -29,14 +29,8 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    const success = await signInWithGoogle();
-    if (!success) {
-      toast({
-        title: "Access Denied",
-        description: "You are not authorized to access this application.",
-        variant: "destructive",
-      });
-    }
+    // The signInWithGoogle function from the context now handles its own toasts
+    await signInWithGoogle();
   };
 
   return (
