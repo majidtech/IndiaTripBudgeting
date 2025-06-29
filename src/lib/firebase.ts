@@ -29,7 +29,7 @@ if (hasAllKeys) {
     auth = getAuth(app);
   } catch (error) {
     console.error("Firebase initialization failed. Please check your credentials in the .env file.", error);
-    // If initialization fails, we set auth to null to prevent crashes elsewhere.
+    // If initialization fails, we ensure auth is null to prevent crashes.
     app = null;
     auth = null;
   }
@@ -40,8 +40,6 @@ if (hasAllKeys) {
   }
 }
 
-// This is now derived from the *result* of the initialization attempt, not just the presence of keys.
-// This is the crucial change that prevents the crash.
 const isFirebaseConfigured = !!auth;
 
 export { app, auth, isFirebaseConfigured };

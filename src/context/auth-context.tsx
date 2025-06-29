@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { loginAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showSplashScreen]);
 
   useEffect(() => {
+    // If Firebase is not configured, auth will be null.
+    // In this case, we fall back to localStorage auth and skip Firebase.
     if (!auth) {
       try {
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
@@ -68,10 +70,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // If Firebase is configured, set up the real-time auth state listener.
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);
       } else {
+        // If no Firebase user, check for localStorage user as a fallback
         try {
           const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
           if (isAuthenticated) {
@@ -106,10 +110,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
+    // If auth is null, it means Firebase isn't configured.
     if (!auth) {
       toast({
         title: "Google Sign-In Is Not Available",
-        description: "Firebase has not been configured.",
+        description: "Firebase has not been configured correctly.",
         variant: "destructive",
       });
       return false;
@@ -142,6 +147,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return false;
       } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-disabled') {
         description = "The credential you provided is incorrect or the user is disabled."
+      } else if(error.code === 'auth/configuration-not-found'){
+        description = "Firebase configuration is incorrect. Please check your .env file."
       } else if (error.message) {
         description = error.message;
       }
@@ -157,6 +164,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
+      // Check for auth object before trying to sign out
       if (auth && auth.currentUser) {
         await signOut(auth);
       }
