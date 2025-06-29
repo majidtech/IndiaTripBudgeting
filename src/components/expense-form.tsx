@@ -9,8 +9,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CATEGORIES, CONVERSION_RATES } from "@/lib/constants";
+import { CATEGORIES } from "@/lib/constants";
 import type { Expense } from "@/lib/types";
+import type { ExchangeRates } from "@/ai/flows/get-exchange-rates";
 
 const expenseSchema = z.object({
   description: z.string().min(2, "Description must be at least 2 characters."),
@@ -22,9 +23,10 @@ interface ExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
+  rates: ExchangeRates | null;
 }
 
-export function ExpenseDialog({ isOpen, onClose, onAddExpense }: ExpenseDialogProps) {
+export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates }: ExpenseDialogProps) {
   const [amountInr, setAmountInr] = useState(0);
 
   const form = useForm<z.infer<typeof expenseSchema>>({
@@ -113,10 +115,12 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense }: ExpenseDialogPr
                   <FormControl>
                     <Input type="number" placeholder="1000" {...field} onChange={handleAmountChange} />
                   </FormControl>
-                   <p className="text-xs text-muted-foreground mt-1">
-                      USD: ${(amountInr * CONVERSION_RATES.INR_TO_USD).toFixed(2)}, AUD: A$
-                      {(amountInr * CONVERSION_RATES.INR_TO_AUD).toFixed(2)}
-                    </p>
+                   {rates && amountInr > 0 && (
+                     <p className="text-xs text-muted-foreground mt-1">
+                        USD: ${(amountInr * rates.INR_TO_USD).toFixed(2)}, AUD: A$
+                        {(amountInr * rates.INR_TO_AUD).toFixed(2)}
+                      </p>
+                   )}
                   <FormMessage />
                 </FormItem>
               )}

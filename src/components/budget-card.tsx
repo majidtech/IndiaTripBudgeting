@@ -8,19 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Wallet, IndianRupee } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Label } from "./ui/label";
-
-const CONVERSION_RATES = {
-  USD: 0.012, // 1 INR = 0.012 USD
-  AUD: 0.018, // 1 INR = 0.018 AUD
-};
+import type { ExchangeRates } from "@/ai/flows/get-exchange-rates";
 
 interface BudgetCardProps {
   totalBudget: number;
   totalSpent: number;
   onSetBudget: (newBudget: number) => void;
+  rates: ExchangeRates | null;
 }
 
-export function BudgetCard({ totalBudget, totalSpent, onSetBudget }: BudgetCardProps) {
+export function BudgetCard({ totalBudget, totalSpent, onSetBudget, rates }: BudgetCardProps) {
   const [newBudget, setNewBudget] = useState(totalBudget.toString());
   const remaining = totalBudget - totalSpent;
   const progress = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
@@ -44,7 +41,10 @@ export function BudgetCard({ totalBudget, totalSpent, onSetBudget }: BudgetCardP
           <IndianRupee className="h-6 w-6 mr-1" />{totalBudget.toLocaleString('en-IN')}
         </div>
         <p className="text-xs text-muted-foreground">
-          ~${(totalBudget * CONVERSION_RATES.USD).toFixed(0)} USD / A${(totalBudget * CONVERSION_RATES.AUD).toFixed(0)} AUD
+          {rates
+            ? `~$${(totalBudget * rates.INR_TO_USD).toFixed(0)} USD / A$${(totalBudget * rates.INR_TO_AUD).toFixed(0)} AUD`
+            : "Loading rates..."
+          }
         </p>
         <Progress value={progress} className="mt-4" />
         <div className="mt-2 text-sm flex justify-between">

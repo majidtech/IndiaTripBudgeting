@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import type { Expense } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/header";
@@ -10,6 +10,7 @@ import { RecentTransactions } from "@/components/recent-transactions";
 import { CurrencyConverter } from "@/components/currency-converter";
 import { ExpenseDialog } from "@/components/expense-form";
 import { PlusCircle } from "lucide-react";
+import { getExchangeRates, type ExchangeRates } from "@/ai/flows/get-exchange-rates";
 
 const initialExpenses: Expense[] = [
   { id: "1", description: "Flight to Delhi", amount: 35000, category: "transport", date: new Date().toISOString() },
@@ -23,6 +24,19 @@ export default function DashboardPage() {
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [budget, setBudget] = useState(100000);
   const [isExpenseDialogOpen, setExpenseDialogOpen] = useState(false);
+  const [rates, setRates] = useState<ExchangeRates | null>(null);
+
+  useEffect(() => {
+    const fetchRates = async () => {
+      try {
+        const fetchedRates = await getExchangeRates();
+        setRates(fetchedRates);
+      } catch (error) {
+        console.error("Failed to fetch exchange rates:", error);
+      }
+    };
+    fetchRates();
+  }, []);
 
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
@@ -50,8 +64,8 @@ export default function DashboardPage() {
             </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <BudgetCard totalBudget={budget} totalSpent={totalSpent} onSetBudget={handleSetBudget} />
-          <CurrencyConverter />
+          <BudgetCard totalBudget={budget} totalSpent={totalSpent} onSetBudget={handleSetBudget} rates={rates} />
+          <CurrencyConverter rates={rates} />
         </div>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <div className="lg:col-span-4">
@@ -66,6 +80,7 @@ export default function DashboardPage() {
         isOpen={isExpenseDialogOpen}
         onClose={() => setExpenseDialogOpen(false)}
         onAddExpense={addExpense}
+        rates={rates}
       />
     </div>
   );
