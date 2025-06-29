@@ -63,6 +63,7 @@ export default function LoginPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
+            <p className="text-sm text-center text-muted-foreground">Or use Personal login to access your own expenses.</p>
             <Button type="submit" className="w-full">Sign in</Button>
           </CardFooter>
         </form>
