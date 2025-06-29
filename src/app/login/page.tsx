@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { GoogleIcon, Logo } from "@/components/icons";
 import { useAuth } from "@/context/auth-context";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
@@ -85,10 +86,15 @@ export default function LoginPage() {
                 </span>
               </div>
             </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button">
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} type="button" disabled={!isFirebaseConfigured}>
               <GoogleIcon className="mr-2 h-4 w-4" />
               Sign in with Google
             </Button>
+             {!isFirebaseConfigured && (
+                <p className="text-xs text-center text-muted-foreground -mt-2 px-4">
+                    Google Sign-In is unavailable. Please add Firebase credentials to the .env file.
+                </p>
+            )}
           </CardFooter>
         </form>
       </Card>
