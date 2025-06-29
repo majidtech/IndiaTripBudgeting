@@ -183,9 +183,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {showSplashScreen && (
           <div
               className={cn(
-                  'fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white text-2xl font-bold transition-opacity duration-500',
+                  'fixed inset-0 z-[9999] flex items-center justify-center text-white text-2xl font-bold transition-opacity duration-500',
                   isFadingOut ? 'opacity-0' : 'opacity-100'
               )}
+              style={{ backgroundColor: 'black' }}
           >
               Created by Adil :)
           </div>
