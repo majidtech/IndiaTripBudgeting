@@ -1,0 +1,69 @@
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import type { Expense } from "@/lib/types";
+import { CATEGORIES } from "@/lib/constants";
+import { formatDistanceToNow } from "date-fns";
+
+interface RecentTransactionsProps {
+  expenses: Expense[];
+}
+
+export function RecentTransactions({ expenses }: RecentTransactionsProps) {
+  const getCategoryInfo = (categoryValue: string) => {
+    return CATEGORIES.find(c => c.value === categoryValue);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Recent Expenses</CardTitle>
+        <CardDescription>Your last few transactions.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Expense</TableHead>
+              <TableHead className="text-right">Amount</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {expenses.length > 0 ? (
+              expenses.map((expense) => {
+                const category = getCategoryInfo(expense.category);
+                const CategoryIcon = category?.icon;
+                return (
+                  <TableRow key={expense.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-3">
+                        {CategoryIcon && <div className="p-2 bg-muted rounded-full"><CategoryIcon className="h-4 w-4 text-muted-foreground" /></div>}
+                        <div>
+                          <p className="font-medium">{expense.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {category?.label} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
+                          </p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      ₹{expense.amount.toLocaleString('en-IN')}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            ) : (
+              <TableRow>
+                <TableCell colSpan={2} className="text-center text-muted-foreground">
+                  No expenses added yet.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
+  );
+}
