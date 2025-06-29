@@ -4,24 +4,27 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { useRouter, usePathname } from 'next/navigation';
 import { loginAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
+import { NamePromptDialog } from '@/components/name-prompt-dialog';
 
-// Simplified user type, no longer need Firebase User
-type SimpleUser = {
+type AppUser = {
   username: string;
+  name: string | null;
 };
 
 interface AuthContextType {
-  user: SimpleUser | null;
+  user: AppUser | null;
   loading: boolean;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
+  setUserName: (name: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<SimpleUser | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isNamePromptOpen, setNamePromptOpen] = useState(false);
   const [showSplashScreen, setShowSplashScreen] = useState(false);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const router = useRouter();
@@ -41,11 +44,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [showSplashScreen]);
 
+  const setUserName = useCallback((name: string) => {
+    try {
+      localStorage.setItem('userName', name);
+    } catch (error) {
+      // localStorage not available
+    }
+    setUser(prev => prev ? { ...prev, name } : null);
+    setNamePromptOpen(false);
+  }, []);
+
   useEffect(() => {
     try {
       const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
       if (isAuthenticated) {
-        setUser({ username: "OK-Family-2025" });
+        const savedName = localStorage.getItem('userName');
+        setUser({ username: "OK-Family-2025", name: savedName });
+        if (!savedName) {
+          setNamePromptOpen(true);
+        }
       } else {
         setUser(null);
       }
@@ -60,10 +77,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (result.success) {
       try {
         localStorage.setItem("isAuthenticated", "true");
+        const savedName = localStorage.getItem('userName');
+        setUser({ username: "OK-Family-2025", name: savedName });
+        if (!savedName) {
+          setNamePromptOpen(true);
+        }
       } catch (error) {
-        // localStorage is not available
+        setUser({ username: "OK-Family-2025", name: null });
+        setNamePromptOpen(true);
       }
-      setUser({ username: "OK-Family-2025" });
       setShowSplashScreen(true);
       router.push("/");
       return true;
@@ -74,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     try {
       localStorage.removeItem("isAuthenticated");
+      localStorage.removeItem("userName");
     } catch (error) {
       // localStorage is not available
     }
@@ -97,7 +120,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, setUserName }}>
       {showSplashScreen && (
           <div
               className={cn(
@@ -109,6 +132,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               Created by Adil :)
           </div>
       )}
+      <NamePromptDialog isOpen={isNamePromptOpen} onSaveName={setUserName} />
       {children}
     </AuthContext.Provider>
   );

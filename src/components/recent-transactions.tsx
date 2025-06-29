@@ -21,7 +21,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
     <Card>
       <CardHeader>
         <CardTitle>Recent Expenses</CardTitle>
-        <CardDescription>Your last few transactions.</CardDescription>
+        <CardDescription>The last few transactions from the group.</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
@@ -44,7 +44,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                         <div>
                           <p className="font-medium">{expense.description}</p>
                           <p className="text-sm text-muted-foreground">
-                            {category?.label} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
+                            {expense.userName} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
                           </p>
                         </div>
                       </div>

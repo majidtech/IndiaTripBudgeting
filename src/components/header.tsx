@@ -12,18 +12,23 @@ export function AppHeader() {
   const { user, logout } = useAuth();
 
   const getDisplayName = () => {
-    if (!user) return "";
-    return user.username;
+    return user?.name || user?.username || "";
   };
 
   const getInitials = () => {
-    const name = getDisplayName();
-    if (!name) return "U";
-    const nameParts = name.split(" ");
-    if (nameParts.length > 1 && nameParts[0] && nameParts[1]) {
-      return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+    const name = user?.name;
+    if (name) {
+      const nameParts = name.trim().split(" ");
+      if (nameParts.length > 1 && nameParts[0] && nameParts[1]) {
+        return `${nameParts[0][0]}${nameParts[1][0]}`.toUpperCase();
+      }
+      return name[0]?.toUpperCase() || "U";
     }
-    return name[0]?.toUpperCase() || "U";
+    // Fallback for username if name isn't set yet.
+    if(user?.username) {
+        return user.username[0].toUpperCase();
+    }
+    return "U";
   };
   
   return (
@@ -51,6 +56,7 @@ export function AppHeader() {
                 <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                         <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
+                         {user.name && <p className="text-xs text-muted-foreground">{user.username}</p>}
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />

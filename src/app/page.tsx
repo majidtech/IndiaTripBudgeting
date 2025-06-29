@@ -11,16 +11,20 @@ import { CurrencyConverter } from "@/components/currency-converter";
 import { ExpenseDialog } from "@/components/expense-form";
 import { PlusCircle } from "lucide-react";
 import { getExchangeRates, type ExchangeRates } from "@/ai/flows/get-exchange-rates";
+import { useAuth } from "@/context/auth-context";
+import { useToast } from "@/hooks/use-toast";
 
 const initialExpenses: Expense[] = [
-  { id: "1", description: "Flight to Delhi", amount: 35000, category: "transport", date: new Date().toISOString() },
-  { id: "2", description: "Hotel in Jaipur (3 nights)", amount: 12000, category: "accommodation", date: new Date(Date.now() - 86400000).toISOString() },
-  { id: "3", description: "Dinner at a local restaurant", amount: 1500, category: "food", date: new Date(Date.now() - 172800000).toISOString() },
-  { id: "4", description: "Taj Mahal entry fee", amount: 1100, category: "activities", date: new Date(Date.now() - 259200000).toISOString() },
-  { id: "5", description: "Souvenirs from market", amount: 2500, category: "shopping", date: new Date(Date.now() - 345600000).toISOString() },
+  { id: "1", description: "Flight to Delhi", amount: 35000, category: "transport", date: new Date().toISOString(), userName: "Adil" },
+  { id: "2", description: "Hotel in Jaipur (3 nights)", amount: 12000, category: "accommodation", date: new Date(Date.now() - 86400000).toISOString(), userName: "Soha" },
+  { id: "3", description: "Dinner at a local restaurant", amount: 1500, category: "food", date: new Date(Date.now() - 172800000).toISOString(), userName: "Adil" },
+  { id: "4", description: "Taj Mahal entry fee", amount: 1100, category: "activities", date: new Date(Date.now() - 259200000).toISOString(), userName: "OK-Family" },
+  { id: "5", description: "Souvenirs from market", amount: 2500, category: "shopping", date: new Date(Date.now() - 345600000).toISOString(), userName: "Soha" },
 ];
 
 export default function DashboardPage() {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
   const [budget, setBudget] = useState(100000);
   const [isExpenseDialogOpen, setExpenseDialogOpen] = useState(false);
@@ -42,9 +46,17 @@ export default function DashboardPage() {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  const addExpense = useCallback((newExpense: Omit<Expense, 'id' | 'date'>) => {
-    setExpenses(prev => [{ ...newExpense, id: crypto.randomUUID(), date: new Date().toISOString() }, ...prev]);
-  }, []);
+  const addExpense = useCallback((newExpense: Omit<Expense, 'id' | 'date' | 'userName'>) => {
+    if (!user?.name) {
+       toast({
+        title: "Name Not Set",
+        description: "Cannot add expense without a user name.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setExpenses(prev => [{ ...newExpense, id: crypto.randomUUID(), date: new Date().toISOString(), userName: user.name! }, ...prev]);
+  }, [user?.name, toast]);
 
   const handleSetBudget = (newBudget: number) => {
     if (newBudget > 0) {

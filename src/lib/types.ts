@@ -12,4 +12,5 @@ export type Expense = {
   amount: number; // in INR
   category: string;
   date: string;
+  userName: string;
 };

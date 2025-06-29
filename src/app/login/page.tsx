@@ -35,8 +35,8 @@ export default function LoginPage() {
                 <Logo className="h-10 w-10 text-primary" />
                 <h1 className="text-2xl font-bold">India Trip Budget Buddy</h1>
             </div>
-          <CardTitle className="text-2xl">Login</CardTitle>
-          <CardDescription>Enter your username below to login to your account.</CardDescription>
+          <CardTitle className="text-2xl">Group Login</CardTitle>
+          <CardDescription>Use the shared group credentials to log in.</CardDescription>
         </CardHeader>
         <form onSubmit={handleLogin}>
           <CardContent className="grid gap-4">
