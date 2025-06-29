@@ -53,7 +53,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showSplashScreen]);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
+    // If firebase is not configured or initialization failed, don't set up the listener.
+    if (!isFirebaseConfigured || !auth) {
       // Handle only non-Firebase auth if not configured
       try {
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
@@ -66,10 +67,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(null);
       }
       setLoading(false);
-      return; // No cleanup needed, and no Firebase listener to set up
+      return;
     }
 
-    // Original logic for when Firebase IS configured
+    // Original logic for when Firebase IS configured and initialized
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
             // Check if the signed-in user is authorized
@@ -118,10 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
-    if (!isFirebaseConfigured) {
+    if (!isFirebaseConfigured || !auth) {
       toast({
         title: "Google Sign-In Is Not Available",
-        description: "The application's Firebase credentials have not been configured.",
+        description: "The application's Firebase credentials have not been configured correctly.",
         variant: "destructive",
       });
       return false;
@@ -149,7 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      if (isFirebaseConfigured && auth.currentUser) {
+      if (isFirebaseConfigured && auth && auth.currentUser) {
         await signOut(auth);
       }
       localStorage.removeItem("isAuthenticated");

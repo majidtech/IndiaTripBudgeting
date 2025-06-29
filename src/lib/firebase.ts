@@ -10,32 +10,29 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// The configuration is considered valid only if the essential keys are present and not just empty strings.
-let isFirebaseConfigured =
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+
+const isFirebaseConfigured =
   !!firebaseConfig.apiKey &&
   !!firebaseConfig.authDomain &&
   !!firebaseConfig.projectId;
 
-let app: FirebaseApp;
-let auth: Auth;
-
 if (isFirebaseConfigured) {
   try {
-    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
   } catch (error) {
     console.error("Firebase initialization failed:", error);
-    isFirebaseConfigured = false;
-    app = {} as FirebaseApp;
-    auth = {} as Auth;
+    // Set app and auth to null if initialization fails
+    app = null;
+    auth = null;
   }
 } else {
-  // Log a warning if not configured, useful for debugging.
+  // This warning will appear in the server console during build/SSR.
   if (typeof window === 'undefined') {
-    console.warn("Firebase is not configured. Google SSO will be disabled. Please check your .env file.");
+    console.warn("Firebase is not configured. Google SSO will be disabled. Please provide Firebase credentials in your .env file.");
   }
-  app = {} as FirebaseApp;
-  auth = {} as Auth;
 }
 
 export { app, auth, isFirebaseConfigured };
