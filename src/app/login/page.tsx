@@ -2,8 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signInWithEmailAndPassword } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -17,15 +15,15 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    try {
-      await signInWithEmailAndPassword(auth, username, password);
+    if (username === "OK-Family-2025" && password === "N)eYL0!p.1:5YfQya}wp") {
+      localStorage.setItem("isAuthenticated", "true");
       router.push("/");
-    } catch (err: any) {
+    } else {
       toast({
         title: "Login Failed",
-        description: err.message,
+        description: "Invalid username or password.",
         variant: "destructive",
       });
     }

@@ -3,8 +3,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
@@ -13,8 +11,8 @@ export function AppHeader() {
   const { user } = useAuth();
   const router = useRouter();
 
-  const handleLogout = async () => {
-    await signOut(auth);
+  const handleLogout = () => {
+    localStorage.removeItem("isAuthenticated");
     router.push('/login');
   };
 
