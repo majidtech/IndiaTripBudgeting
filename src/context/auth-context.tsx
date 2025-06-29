@@ -3,6 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { loginAction } from '@/lib/actions';
+import { cn } from '@/lib/utils';
 
 interface AuthContextType {
   user: { username: string } | null;
@@ -16,8 +17,29 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<{ username: string } | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showSplashScreen, setShowSplashScreen] = useState(false);
+  const [isFadingOut, setIsFadingOut] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
+
+  useEffect(() => {
+    // Manages the splash screen visibility and fade-out effect.
+    if (showSplashScreen) {
+      const fadeTimer = setTimeout(() => {
+        setIsFadingOut(true);
+      }, 2000); // Start fading after 2 seconds
+
+      const hideTimer = setTimeout(() => {
+        setShowSplashScreen(false);
+        setIsFadingOut(false);
+      }, 2500); // Hide completely after 0.5s fade
+
+      return () => {
+        clearTimeout(fadeTimer);
+        clearTimeout(hideTimer);
+      };
+    }
+  }, [showSplashScreen]);
 
   useEffect(() => {
     try {
@@ -43,6 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // localStorage is not available
       }
       setUser({ username: "OK-Family-2025" });
+      setShowSplashScreen(true);
       router.push("/");
       return true;
     }
@@ -79,6 +102,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ user, loading, login, logout }}>
+      {showSplashScreen && (
+          <div
+              className={cn(
+                  'fixed inset-0 z-[9999] flex items-center justify-center bg-black text-white text-2xl font-bold transition-opacity duration-500',
+                  isFadingOut ? 'opacity-0' : 'opacity-100'
+              )}
+          >
+              Created by Adil :)
+          </div>
+      )}
       {children}
     </AuthContext.Provider>
   );
