@@ -1,13 +1,12 @@
 'use server';
 /**
- * @fileOverview A flow to get live currency exchange rates.
+ * @fileOverview A service to get live currency exchange rates from a third-party API.
  *
  * - getExchangeRates - A function that fetches the latest exchange rates.
  * - ExchangeRates - The return type for the getExchangeRates function.
  */
 
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { z } from 'zod';
 
 const ExchangeRatesSchema = z.object({
   INR_TO_USD: z.number().describe('The conversion rate from 1 Indian Rupee to US Dollar.'),
@@ -18,30 +17,40 @@ const ExchangeRatesSchema = z.object({
 export type ExchangeRates = z.infer<typeof ExchangeRatesSchema>;
 
 export async function getExchangeRates(): Promise<ExchangeRates> {
-  return getExchangeRatesFlow();
-}
+  try {
+    // Fetch rates in parallel. Cache for 1 hour using Next.js fetch revalidation.
+    const [usdToInrResponse, audToInrResponse] = await Promise.all([
+      fetch('https://api.frankfurter.app/latest?from=USD&to=INR', { next: { revalidate: 3600 } }),
+      fetch('https://api.frankfurter.app/latest?from=AUD&to=INR', { next: { revalidate: 3600 } })
+    ]);
 
-const prompt = ai.definePrompt({
-  name: 'getExchangeRatesPrompt',
-  output: {schema: ExchangeRatesSchema},
-  prompt: `You are a financial data provider. Your task is to provide the most current, real-time currency exchange rates.
+    if (!usdToInrResponse.ok || !audToInrResponse.ok) {
+      console.error('Failed to fetch exchange rates from API.');
+      throw new Error('Failed to fetch exchange rates from API.');
+    }
 
-  Provide the exchange rates for the following pairs:
-  - INR to USD
-  - INR to AUD
-  - USD to INR
-  - AUD to INR
-  
-  Return the data in the requested JSON format. Do not add any extra commentary or explanations.`,
-});
+    const usdData = await usdToInrResponse.json();
+    const audData = await audToInrResponse.json();
 
-const getExchangeRatesFlow = ai.defineFlow(
-  {
-    name: 'getExchangeRatesFlow',
-    outputSchema: ExchangeRatesSchema,
-  },
-  async () => {
-    const {output} = await prompt();
-    return output!;
+    const usdToInrRate = usdData.rates?.INR;
+    const audToInrRate = audData.rates?.INR;
+
+    if (typeof usdToInrRate !== 'number' || typeof audToInrRate !== 'number') {
+      throw new Error('Invalid data type received from exchange rate API.');
+    }
+
+    const rates = {
+      USD_TO_INR: usdToInrRate,
+      AUD_TO_INR: audToInrRate,
+      INR_TO_USD: 1 / usdToInrRate,
+      INR_TO_AUD: 1 / audToInrRate,
+    };
+    
+    return ExchangeRatesSchema.parse(rates);
+
+  } catch (error) {
+    console.error("Error in getExchangeRates:", error);
+    // Rethrow a generic error to be handled by the UI
+    throw new Error('Could not fetch exchange rates.');
   }
-);
+}
