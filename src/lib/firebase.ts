@@ -14,7 +14,7 @@ let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
 // This const checks if the user has provided all the necessary variables.
-const isFirebaseConfigured =
+const hasAllKeys =
   !!firebaseConfig.apiKey &&
   !!firebaseConfig.authDomain &&
   !!firebaseConfig.projectId &&
@@ -22,8 +22,8 @@ const isFirebaseConfigured =
   !!firebaseConfig.messagingSenderId &&
   !!firebaseConfig.appId;
 
-// We only try to initialize if the config is present.
-if (isFirebaseConfigured) {
+// We only try to initialize if all keys are present.
+if (hasAllKeys) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
@@ -39,5 +39,9 @@ if (isFirebaseConfigured) {
     console.warn("Firebase is not configured. Google SSO will be disabled. Please provide Firebase credentials in your .env file.");
   }
 }
+
+// This is now derived from the *result* of the initialization attempt, not just the presence of keys.
+// This is the crucial change that prevents the crash.
+const isFirebaseConfigured = !!auth;
 
 export { app, auth, isFirebaseConfigured };
