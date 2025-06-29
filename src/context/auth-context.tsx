@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { onAuthStateChanged, User, GoogleAuthProvider, signInWithPopup, signOut, UserCredential } from 'firebase/auth';
-import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { auth } from '@/lib/firebase';
 import { loginAction } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -53,9 +53,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [showSplashScreen]);
 
   useEffect(() => {
-    // If firebase is not configured or initialization failed, don't set up the listener.
-    if (!isFirebaseConfigured || !auth) {
-      // Handle only non-Firebase auth if not configured
+    // The source of truth is the 'auth' object. If it's null, Firebase is not available.
+    if (!auth) {
+      // Handle only non-Firebase auth if not configured/initialized
       try {
         const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
         if (isAuthenticated) {
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Original logic for when Firebase IS configured and initialized
+    // Logic for when Firebase IS configured and initialized
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
             // Check if the signed-in user is authorized
@@ -119,7 +119,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [router]);
 
   const signInWithGoogle = useCallback(async (): Promise<boolean> => {
-    if (!isFirebaseConfigured || !auth) {
+    // Again, the source of truth is the 'auth' object.
+    if (!auth) {
       toast({
         title: "Google Sign-In Is Not Available",
         description: "The application's Firebase credentials have not been configured correctly.",
@@ -150,7 +151,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      if (isFirebaseConfigured && auth && auth.currentUser) {
+      // Check if auth object exists before trying to sign out
+      if (auth && auth.currentUser) {
         await signOut(auth);
       }
       localStorage.removeItem("isAuthenticated");

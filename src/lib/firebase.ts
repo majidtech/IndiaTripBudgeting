@@ -13,18 +13,23 @@ const firebaseConfig = {
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 
+// This const checks if the user has provided all the necessary variables.
 const isFirebaseConfigured =
   !!firebaseConfig.apiKey &&
   !!firebaseConfig.authDomain &&
-  !!firebaseConfig.projectId;
+  !!firebaseConfig.projectId &&
+  !!firebaseConfig.storageBucket &&
+  !!firebaseConfig.messagingSenderId &&
+  !!firebaseConfig.appId;
 
+// We only try to initialize if the config is present.
 if (isFirebaseConfigured) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
   } catch (error) {
-    console.error("Firebase initialization failed:", error);
-    // Set app and auth to null if initialization fails
+    console.error("Firebase initialization failed. Please check your credentials in the .env file.", error);
+    // If initialization fails, we set auth to null to prevent crashes elsewhere.
     app = null;
     auth = null;
   }
