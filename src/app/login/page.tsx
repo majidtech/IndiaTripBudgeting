@@ -1,26 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/icons";
+import { useAuth } from "@/context/auth-context";
 
 export default function LoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const router = useRouter();
+  const { login } = useAuth();
   const { toast } = useToast();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (username === "OK-Family-2025" && password === "N)eYL0!p.1:5YfQya}wp") {
-      localStorage.setItem("isAuthenticated", "true");
-      router.push("/");
-    } else {
+    const success = await login(username, password);
+    if (!success) {
       toast({
         title: "Login Failed",
         description: "Invalid username or password.",

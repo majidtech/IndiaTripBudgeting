@@ -4,17 +4,10 @@ import Link from "next/link";
 import { Logo } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/context/auth-context";
-import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 
 export function AppHeader() {
-  const { user } = useAuth();
-  const router = useRouter();
-
-  const handleLogout = () => {
-    localStorage.removeItem("isAuthenticated");
-    router.push('/login');
-  };
+  const { user, logout } = useAuth();
 
   return (
     <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-10">
@@ -28,7 +21,7 @@ export function AppHeader() {
         </Link>
       </nav>
       {user && (
-         <Button variant="outline" size="sm" onClick={handleLogout}>
+         <Button variant="outline" size="sm" onClick={logout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
          </Button>

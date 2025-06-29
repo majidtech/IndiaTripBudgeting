@@ -1,11 +1,13 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 
 interface AuthContextType {
   user: { username: string } | null;
   loading: boolean;
+  login: (username: string, password: string) => Promise<boolean>;
+  logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -17,14 +19,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-    if (isAuthenticated) {
-      setUser({ username: "OK-Family-2025" });
-    } else {
+    try {
+      const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+      if (isAuthenticated) {
+        setUser({ username: "OK-Family-2025" });
+      } else {
+        setUser(null);
+      }
+    } catch (error) {
+      // localStorage is not available
       setUser(null);
     }
     setLoading(false);
   }, []);
+
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
+    if (username === "OK-Family-2025" && password === "N)eYL0!p.1:5YfQya}wp") {
+      try {
+        localStorage.setItem("isAuthenticated", "true");
+      } catch (error) {
+        // localStorage is not available
+      }
+      setUser({ username: "OK-Family-2025" });
+      router.push("/");
+      return true;
+    }
+    return false;
+  }, [router]);
+
+  const logout = useCallback(() => {
+    try {
+      localStorage.removeItem("isAuthenticated");
+    } catch (error) {
+        // localStorage is not available
+    }
+    setUser(null);
+    router.push('/login');
+  }, [router]);
+
 
   useEffect(() => {
     if (loading) return;
@@ -44,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
