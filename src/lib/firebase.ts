@@ -11,7 +11,11 @@ const firebaseConfig = {
 };
 
 // Check if the essential Firebase config values are present
-export const isFirebaseConfigured = !!firebaseConfig.apiKey;
+export const isFirebaseConfigured = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.authDomain &&
+  firebaseConfig.projectId
+);
 
 let app: FirebaseApp;
 let auth: Auth;
