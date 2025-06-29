@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
         if (firebaseUser) {
             // Check if the signed-in user is authorized
-            if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email)) {
+            if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email.toLowerCase())) {
                 setUser(firebaseUser);
             } else {
                 // If not authorized, sign them out and set user to null
@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const firebaseUser = result.user;
 
         // Check if the signed-in user is authorized
-        if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email)) {
+        if (firebaseUser.email && authorizedEmails.includes(firebaseUser.email.toLowerCase())) {
             setShowSplashScreen(true);
             return true;
         } else {
