@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { loginAction } from '@/lib/actions';
 
 interface AuthContextType {
   user: { username: string } | null;
@@ -34,7 +35,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    if (username === "OK-Family-2025" && password === "N)eYL0!p.1:5YfQya}wp") {
+    const result = await loginAction(username, password);
+    if (result.success) {
       try {
         localStorage.setItem("isAuthenticated", "true");
       } catch (error) {
