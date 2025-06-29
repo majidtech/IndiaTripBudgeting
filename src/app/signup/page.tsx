@@ -7,7 +7,7 @@ export default function SignupRedirectPage() {
   const router = useRouter();
 
   useEffect(() => {
-    router.replace("/login");
+    router.replace("/grouplogin");
   }, [router]);
 
   return (

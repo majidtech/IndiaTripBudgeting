@@ -101,20 +101,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // localStorage is not available
     }
     setUser(null);
-    router.push('/login');
+    router.push('/grouplogin');
   }, [router]);
 
   useEffect(() => {
     if (loading) return;
-    const isAuthPage = pathname === '/login' || pathname === '/signup';
+    const isAuthPage = pathname === '/grouplogin' || pathname === '/signup';
     if (!user && !isAuthPage) {
-      router.push('/login');
+      router.push('/grouplogin');
     } else if (user && isAuthPage) {
       router.push('/');
     }
   }, [user, loading, pathname, router]);
 
-  const isAuthPage = pathname === '/login' || pathname === '/signup';
+  const isAuthPage = pathname === '/grouplogin' || pathname === '/signup';
   if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
     return <div className="flex items-center justify-center h-screen w-full bg-muted/40"><p>Loading...</p></div>;
   }
