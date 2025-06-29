@@ -14,13 +14,7 @@ import { getExchangeRates, type ExchangeRates } from "@/ai/flows/get-exchange-ra
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
-const initialExpenses: Expense[] = [
-  { id: "1", description: "Flight to Delhi", amount: 35000, category: "transport", date: new Date().toISOString(), userName: "Adil" },
-  { id: "2", description: "Hotel in Jaipur (3 nights)", amount: 12000, category: "accommodation", date: new Date(Date.now() - 86400000).toISOString(), userName: "Soha" },
-  { id: "3", description: "Dinner at a local restaurant", amount: 1500, category: "food", date: new Date(Date.now() - 172800000).toISOString(), userName: "Adil" },
-  { id: "4", description: "Taj Mahal entry fee", amount: 1100, category: "activities", date: new Date(Date.now() - 259200000).toISOString(), userName: "OK-Family" },
-  { id: "5", description: "Souvenirs from market", amount: 2500, category: "shopping", date: new Date(Date.now() - 345600000).toISOString(), userName: "Soha" },
-];
+const initialExpenses: Expense[] = [];
 
 export default function DashboardPage() {
   const { user } = useAuth();
