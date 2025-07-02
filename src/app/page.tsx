@@ -15,13 +15,14 @@ import { useAuth, type AppUser } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 import { addExpenseToDb, subscribeToExpenses } from "@/services/expense-service";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { subscribeToBudget, updateBudget } from "@/services/budget-service";
 
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [budget, setBudget] = useState(100000);
+  const [budget, setBudget] = useState(100000); // Default, will be overwritten by Firestore
   const [isExpenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [rates, setRates] = useState<ExchangeRates | null>(null);
 
@@ -41,9 +42,11 @@ export default function DashboardPage() {
     if (!isFirebaseConfigured || !user) return;
 
     const unsubscribeExpenses = subscribeToExpenses(setExpenses);
+    const unsubscribeBudget = subscribeToBudget(setBudget);
 
     return () => {
       unsubscribeExpenses();
+      unsubscribeBudget();
     };
   }, [user]);
 
@@ -80,9 +83,18 @@ export default function DashboardPage() {
     }
   }, [user, toast]);
 
-  const handleSetBudget = (newBudget: number) => {
+  const handleSetBudget = async (newBudget: number) => {
     if (newBudget > 0) {
-      setBudget(newBudget);
+      try {
+        await updateBudget(newBudget);
+      } catch (error) {
+        console.error("Failed to update budget:", error);
+        toast({
+          title: "Error",
+          description: "Could not save the new budget. Please try again.",
+          variant: "destructive",
+        });
+      }
     }
   };
 
