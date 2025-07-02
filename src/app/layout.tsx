@@ -4,7 +4,7 @@ import { AuthProvider } from "@/context/auth-context";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "India Trip Budget Buddy",
+  title: "India Trip Budgeting",
   description: "A budgeting app for your trip to India.",
 };
 

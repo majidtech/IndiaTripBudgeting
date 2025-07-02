@@ -33,7 +33,7 @@ export default function GroupLoginPage() {
         <CardHeader className="text-center">
             <div className="flex justify-center items-center gap-2 mb-4">
                 <Logo className="h-10 w-10 text-primary" />
-                <h1 className="text-2xl font-bold">India Trip Budget Buddy</h1>
+                <h1 className="text-2xl font-bold">India Trip Budgeting</h1>
             </div>
           <CardTitle className="text-2xl">Group Login</CardTitle>
           <CardDescription>Use the shared group credentials to log in.</CardDescription>
