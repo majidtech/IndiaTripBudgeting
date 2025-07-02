@@ -13,4 +13,6 @@ export type Expense = {
   category: string;
   date: string;
   userName: string;
+  paidTo: string;
+  contactInfo?: string;
 };

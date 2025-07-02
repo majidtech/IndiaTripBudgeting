@@ -40,7 +40,7 @@ export default function DashboardPage() {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  const addExpense = useCallback((newExpense: { description: string; amount: number; category: string; userName?: string }) => {
+  const addExpense = useCallback((newExpense: { description: string; amount: number; category: string; userName?: string; paidTo: string; contactInfo?: string }) => {
     const expenseUserName = (user?.isAdmin && newExpense.userName) ? newExpense.userName : user?.name;
 
     if (!expenseUserName) {
@@ -57,7 +57,9 @@ export default function DashboardPage() {
         category: newExpense.category,
         id: crypto.randomUUID(), 
         date: new Date().toISOString(), 
-        userName: expenseUserName 
+        userName: expenseUserName,
+        paidTo: newExpense.paidTo,
+        contactInfo: newExpense.contactInfo
     }, ...prev]);
   }, [user, toast]);
 

@@ -43,8 +43,11 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                         {CategoryIcon && <div className="p-2 bg-muted rounded-full"><CategoryIcon className="h-4 w-4 text-muted-foreground" /></div>}
                         <div>
                           <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {expense.userName} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
+                           <p className="text-sm text-muted-foreground">
+                            Paid to: {expense.paidTo}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            By {expense.userName} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
                           </p>
                         </div>
                       </div>

@@ -16,7 +16,7 @@ import type { AppUser } from "@/context/auth-context";
 interface ExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddExpense: (expense: { description: string; amount: number; category: string; userName?: string; }) => void;
+  onAddExpense: (expense: { description: string; amount: number; category: string; userName?: string; paidTo: string; contactInfo?: string; }) => void;
   rates: ExchangeRates | null;
   user: AppUser | null;
 }
@@ -26,6 +26,8 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
 
   const expenseSchema = z.object({
     description: z.string().min(2, "Description must be at least 2 characters."),
+    paidTo: z.string().min(2, "This field is required."),
+    contactInfo: z.string().optional(),
     amount: z.coerce.number().positive("Amount must be a positive number."),
     category: z.string().min(1, "Please select a category."),
     userName: user?.isAdmin 
@@ -40,6 +42,8 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
       amount: 0,
       category: "",
       userName: "",
+      paidTo: "",
+      contactInfo: "",
     },
   });
 
@@ -49,6 +53,8 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
         amount: values.amount,
         category: values.category,
         userName: values.userName,
+        paidTo: values.paidTo,
+        contactInfo: values.contactInfo
     });
     form.reset();
     setAmountInr(0);
@@ -95,6 +101,32 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
                   <FormLabel>Description</FormLabel>
                   <FormControl>
                     <Input placeholder="e.g., Dinner at a cafe" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="paidTo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Paid To</FormLabel>
+                  <FormControl>
+                    <Input placeholder="e.g., Restaurant, Shop, Driver" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="contactInfo"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contact Info (Optional)</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Email or Phone Number" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
