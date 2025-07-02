@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo, useCallback, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import type { Expense } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { AppHeader } from "@/components/header";
@@ -20,7 +21,8 @@ import type { FirebaseError } from "firebase/app";
 
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, firebaseUser, loading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState(100000); // Default, will be overwritten by Firestore
@@ -28,19 +30,16 @@ export default function DashboardPage() {
   const [rates, setRates] = useState<ExchangeRates | null>(null);
 
   useEffect(() => {
-    const fetchRates = async () => {
-      try {
-        const fetchedRates = await getExchangeRates();
-        setRates(fetchedRates);
-      } catch (error) {
-        console.error("Failed to fetch exchange rates:", error);
-      }
-    };
-    fetchRates();
-  }, []);
+    if (loading) return; // Wait until auth state is confirmed
+    if (!firebaseUser) {
+      router.replace("/grouplogin"); // Redirect if not logged in
+    }
+  }, [firebaseUser, loading, router]);
+
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !user) return;
+    // Only run this effect if firebase is configured and the user is authenticated
+    if (!isFirebaseConfigured || !firebaseUser) return;
     
     const handleFirestoreError = (error: FirebaseError) => {
       let description = "Could not connect to the database. Please check your internet connection.";
@@ -58,6 +57,15 @@ export default function DashboardPage() {
       });
     };
 
+    const fetchRates = async () => {
+      try {
+        const fetchedRates = await getExchangeRates();
+        setRates(fetchedRates);
+      } catch (error) {
+        console.error("Failed to fetch exchange rates:", error);
+      }
+    };
+    fetchRates();
 
     const unsubscribeExpenses = subscribeToExpenses(setExpenses, handleFirestoreError);
     const unsubscribeBudget = subscribeToBudget(setBudget, handleFirestoreError);
@@ -66,7 +74,7 @@ export default function DashboardPage() {
       unsubscribeExpenses();
       unsubscribeBudget();
     };
-  }, [user, toast]);
+  }, [firebaseUser, toast]); // Dependency on firebaseUser ensures this runs only after auth is ready
 
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.advancePaid, 0);
@@ -140,6 +148,11 @@ export default function DashboardPage() {
       }
     }
   };
+  
+  // Render a loading state while authentication is in progress
+  if (loading || !firebaseUser) {
+    return <div className="flex items-center justify-center h-screen w-full bg-muted/40"><p>Loading...</p></div>;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col bg-muted/40">

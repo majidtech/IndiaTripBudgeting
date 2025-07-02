@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -12,8 +13,16 @@ import { useAuth } from "@/context/auth-context";
 export default function GroupLoginPage() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const { login } = useAuth();
+  const { login, firebaseUser, loading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (loading) return;
+    if (firebaseUser) {
+      router.replace("/");
+    }
+  }, [firebaseUser, loading, router]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,6 +35,10 @@ export default function GroupLoginPage() {
       });
     }
   };
+  
+  if (loading || firebaseUser) {
+    return <div className="flex items-center justify-center h-screen w-full bg-muted/40"><p>Loading...</p></div>;
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
