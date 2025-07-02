@@ -2,10 +2,11 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import type { User as FirebaseUser } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously, signOut } from 'firebase/auth';
 import { loginAction } from '@/lib/actions';
 import { NamePromptDialog } from '@/components/name-prompt-dialog';
 import { auth, isFirebaseConfigured } from '@/lib/firebase';
-import { signInAnonymously, signOut } from 'firebase/auth';
 
 export type AppUser = {
   username: string;
@@ -16,7 +17,7 @@ export type AppUser = {
 interface AuthContextType {
   user: AppUser | null;
   loading: boolean;
-  login: (username: string, password:string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   setUserName: (name: string) => void;
 }
@@ -25,125 +26,90 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AppUser | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); // Start as true
   const [isNamePromptOpen, setNamePromptOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  const setUserName = useCallback((name: string) => {
-    try {
-      localStorage.setItem('userName', name);
-    } catch (error) {
-      // localStorage not available
-    }
-    setUser(prev => prev ? { ...prev, name } : null);
-    setNamePromptOpen(false);
-  }, []);
-
   useEffect(() => {
-    const checkAuthStatus = async () => {
-      try {
-        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-        if (isAuthenticated) {
-          // If we think we're logged in, we MUST confirm by signing into Firebase.
-          if (isFirebaseConfigured && auth) {
-            try {
-              // This promise resolves when sign-in is complete.
-              await signInAnonymously(auth);
-            } catch (error) {
-              console.error("Automatic Firebase anonymous sign-in failed on reload:", error);
-              // If Firebase sign-in fails, we are not truly authenticated.
-              setUser(null);
-              setLoading(false);
-              return;
-            }
-          }
-          
-          // Now that Firebase auth is confirmed (if configured), set the user state.
-          const savedName = localStorage.getItem('userName');
-          const savedUsername = localStorage.getItem('username') || "OK-Family-2025";
-          const isAdmin = localStorage.getItem('isAdmin') === 'true';
-          const appUser = { username: savedUsername, name: savedName, isAdmin };
-          
-          setUser(appUser);
+    if (!isFirebaseConfigured || !auth) {
+      console.warn("Firebase is not configured. Authentication and data services will not work.");
+      setLoading(false);
+      return;
+    }
 
-          if (!savedName && !isAdmin) {
-            setNamePromptOpen(true);
-          }
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        // User is signed in to Firebase.
+        const savedUsername = localStorage.getItem('username') || "OK-Family-2025";
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+        const savedName = localStorage.getItem('userName');
+        
+        const appUser: AppUser = {
+          username: savedUsername,
+          name: isAdmin ? 'Admin' : savedName,
+          isAdmin: isAdmin
+        };
+        setUser(appUser);
 
-        } else {
-          setUser(null);
+        if (!appUser.name && !appUser.isAdmin) {
+          setNamePromptOpen(true);
         }
-      } catch (error) {
-        // localStorage might not be available
+      } else {
+        // User is signed out from Firebase.
         setUser(null);
       }
       setLoading(false);
-    };
+    });
 
-    checkAuthStatus();
+    return () => unsubscribe();
+  }, []);
+
+  const setUserName = useCallback((name: string) => {
+    if (name) {
+      localStorage.setItem('userName', name);
+      setUser(prev => prev ? { ...prev, name } : null);
+      setNamePromptOpen(false);
+    }
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const result = await loginAction(username, password);
-    if (result.success) {
-      // Sign in to Firebase Anonymously
-      if (isFirebaseConfigured && auth) {
-        try {
-          await signInAnonymously(auth);
-        } catch (error) {
-          console.error("Firebase anonymous sign-in failed:", error);
-          // This is a critical failure for data saving.
-        }
-      }
-
-      router.push("/");
-
+    if (result.success && auth) {
       try {
         localStorage.setItem("isAuthenticated", "true");
         localStorage.setItem("username", username);
         localStorage.setItem("isAdmin", String(result.isAdmin || false));
         
-        const savedName = localStorage.getItem('userName');
-        const finalName = result.isAdmin ? 'Admin' : savedName;
-        
-        setUser({ username, name: finalName, isAdmin: !!result.isAdmin });
+        // This will trigger the onAuthStateChanged listener
+        await signInAnonymously(auth);
 
-        if (!finalName && !result.isAdmin) {
-          setNamePromptOpen(true);
-        }
+        // The listener handles setting user state. We just need to navigate.
+        router.push("/");
+        return true;
       } catch (error) {
-        setUser({ username, name: null, isAdmin: !!result.isAdmin });
-        if(!result.isAdmin) {
-          setNamePromptOpen(true);
-        }
+        console.error("Firebase anonymous sign-in failed:", error);
+        return false;
       }
-      
-      return true;
     }
     return false;
   }, [router]);
 
   const logout = useCallback(async () => {
-    // Sign out from Firebase
-    if (isFirebaseConfigured && auth?.currentUser) {
-      await signOut(auth);
+    if (auth) {
+      await signOut(auth); // This triggers onAuthStateChanged which handles setUser(null)
     }
-    try {
-      localStorage.removeItem("isAuthenticated");
-      localStorage.removeItem("userName");
-      localStorage.removeItem("username");
-      localStorage.removeItem("isAdmin");
-    } catch (error) {
-      // localStorage is not available
-    }
-    setUser(null);
+    localStorage.removeItem("isAuthenticated");
+    localStorage.removeItem("userName");
+    localStorage.removeItem("username");
+    localStorage.removeItem("isAdmin");
     router.push('/grouplogin');
   }, [router]);
 
   useEffect(() => {
     if (loading) return;
-    const isAuthPage = pathname === '/grouplogin' || pathname === '/signup';
+    const isAuthPage = pathname === '/grouplogin' || pathname === '/signup' || pathname === '/login';
+
     if (!user && !isAuthPage) {
       router.push('/grouplogin');
     } else if (user && isAuthPage) {
@@ -151,17 +117,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [user, loading, pathname, router]);
 
-  const isAuthPage = pathname === '/grouplogin' || pathname === '/signup';
-  if (loading || (!user && !isAuthPage) || (user && isAuthPage)) {
+  const isAuthPage = pathname === '/grouplogin' || pathname === '/signup' || pathname === '/login';
+
+  if (loading) {
     return <div className="flex items-center justify-center h-screen w-full bg-muted/40"><p>Loading...</p></div>;
   }
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, logout, setUserName }}>
-      <NamePromptDialog isOpen={isNamePromptOpen} onSaveName={setUserName} />
-      {children}
-    </AuthContext.Provider>
-  );
+  // Render children if we are on an auth page OR if the user is logged in
+  if ((isAuthPage && !user) || (!isAuthPage && user)) {
+     return (
+      <AuthContext.Provider value={{ user, loading, login, logout, setUserName }}>
+        {user && <NamePromptDialog isOpen={isNamePromptOpen} onSaveName={setUserName} />}
+        {children}
+      </AuthContext.Provider>
+    );
+  }
+
+  // Otherwise, we are in a redirecting state
+  return <div className="flex items-center justify-center h-screen w-full bg-muted/40"><p>Redirecting...</p></div>;
 }
 
 export const useAuth = () => {
