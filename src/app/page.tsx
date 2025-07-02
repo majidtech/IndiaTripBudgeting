@@ -45,7 +45,7 @@ export default function DashboardPage() {
     const handleFirestoreError = (error: FirebaseError) => {
       let description = "Could not connect to the database. Please check your internet connection.";
       if (error.code === 'permission-denied') {
-        description = "The app does not have permission to read data. Please check your Firestore Security Rules in the Firebase console.";
+        description = "Permission Denied. Please check your Firestore Security Rules in the Firebase console.";
       } else if (error.message.includes('400')) {
         description = "The app could not reach the database. This is often caused by missing Firestore setup in your Firebase project. Please ensure Firestore is created and the API is enabled.";
       }
@@ -100,14 +100,10 @@ export default function DashboardPage() {
         let description = "An unknown error occurred. Please try again.";
         if (error instanceof Error) {
             const firebaseError = error as FirebaseError;
-            if (firebaseError.code) {
-                if (firebaseError.code === 'permission-denied') {
-                    description = "Permission Denied: Please check your Firestore security rules in the Firebase console.";
-                } else {
-                    description = `Error: ${firebaseError.code}.`;
-                }
+            if (firebaseError.code === 'permission-denied') {
+              description = "Permission Denied: Your security rules are blocking this action.";
             } else {
-                description = error.message;
+              description = `An unexpected error occurred: ${firebaseError.message}`;
             }
         }
         
@@ -129,14 +125,10 @@ export default function DashboardPage() {
         let description = "An unknown error occurred. Please try again.";
         if (error instanceof Error) {
             const firebaseError = error as FirebaseError;
-            if (firebaseError.code) {
-                 if (firebaseError.code === 'permission-denied') {
-                    description = "Permission Denied: Please check your Firestore security rules.";
-                } else {
-                    description = `Error: ${firebaseError.code}.`;
-                }
+             if (firebaseError.code === 'permission-denied') {
+                description = "Permission Denied: Your security rules are blocking this action.";
             } else {
-                description = error.message;
+                description = `An unexpected error occurred: ${firebaseError.message}`;
             }
         }
         toast({

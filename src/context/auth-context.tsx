@@ -41,32 +41,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    try {
-      const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
-      if (isAuthenticated) {
-        const savedName = localStorage.getItem('userName');
-        const savedUsername = localStorage.getItem('username') || "OK-Family-2025";
-        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+    const checkAuthStatus = async () => {
+      try {
+        const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
+        if (isAuthenticated) {
+          // If we think we're logged in, we MUST confirm by signing into Firebase.
+          if (isFirebaseConfigured && auth) {
+            try {
+              // This promise resolves when sign-in is complete.
+              await signInAnonymously(auth);
+            } catch (error) {
+              console.error("Automatic Firebase anonymous sign-in failed on reload:", error);
+              // If Firebase sign-in fails, we are not truly authenticated.
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+          }
+          
+          // Now that Firebase auth is confirmed (if configured), set the user state.
+          const savedName = localStorage.getItem('userName');
+          const savedUsername = localStorage.getItem('username') || "OK-Family-2025";
+          const isAdmin = localStorage.getItem('isAdmin') === 'true';
+          const appUser = { username: savedUsername, name: savedName, isAdmin };
+          
+          setUser(appUser);
 
-        setUser({ username: savedUsername, name: savedName, isAdmin });
+          if (!savedName && !isAdmin) {
+            setNamePromptOpen(true);
+          }
 
-        // Also ensure firebase auth state is aligned on reload
-        if (isFirebaseConfigured && auth && !auth.currentUser) {
-          signInAnonymously(auth).catch((error) => {
-            console.error("Automatic Firebase anonymous sign-in failed:", error);
-          });
+        } else {
+          setUser(null);
         }
-
-        if (!savedName && !isAdmin) {
-          setNamePromptOpen(true);
-        }
-      } else {
+      } catch (error) {
+        // localStorage might not be available
         setUser(null);
       }
-    } catch (error) {
-      setUser(null);
-    }
-    setLoading(false);
+      setLoading(false);
+    };
+
+    checkAuthStatus();
   }, []);
 
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
