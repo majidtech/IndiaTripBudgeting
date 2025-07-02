@@ -95,9 +95,13 @@ export default function DashboardPage() {
         });
     } catch (error) {
         console.error("Failed to add expense:", error);
+        let description = "Failed to save the expense. Please try again.";
+        if (error instanceof Error && (error.message.includes('permission-denied') || error.message.includes('unauthenticated') || error.message.includes('400'))) {
+          description = "Failed to save. Please check your Firebase project setup and security rules.";
+        }
         toast({
-            title: "Error",
-            description: "Failed to save the expense. Please try again.",
+            title: "Error Saving Expense",
+            description: description,
             variant: "destructive",
         });
     }
@@ -109,9 +113,13 @@ export default function DashboardPage() {
         await updateBudget(newBudget);
       } catch (error) {
         console.error("Failed to update budget:", error);
+         let description = "Could not save the new budget. Please try again.";
+        if (error instanceof Error && (error.message.includes('permission-denied') || error.message.includes('unauthenticated') || error.message.includes('400'))) {
+          description = "Failed to save. Please check your Firebase project setup and security rules.";
+        }
         toast({
-          title: "Error",
-          description: "Could not save the new budget. Please try again.",
+          title: "Error Updating Budget",
+          description: description,
           variant: "destructive",
         });
       }
