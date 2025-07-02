@@ -44,7 +44,9 @@ export default function DashboardPage() {
     
     const handleFirestoreError = (error: FirebaseError) => {
       let description = "Could not connect to the database. Please check your internet connection.";
-      if (error.code === 'permission-denied' || error.code === 'unauthenticated' || error.message.includes('400')) {
+      if (error.code === 'permission-denied') {
+        description = "The app does not have permission to read data. Please check your Firestore Security Rules in the Firebase console.";
+      } else if (error.message.includes('400')) {
         description = "The app could not reach the database. This is often caused by missing Firestore setup in your Firebase project. Please ensure Firestore is created and the API is enabled.";
       }
       
@@ -52,7 +54,7 @@ export default function DashboardPage() {
         title: "Database Connection Error",
         description: description,
         variant: "destructive",
-        duration: 20000, // Show for longer
+        duration: 20000,
       });
     };
 
@@ -96,8 +98,9 @@ export default function DashboardPage() {
     } catch (error) {
         console.error("Failed to add expense:", error);
         let description = "Failed to save the expense. Please try again.";
-        if (error instanceof Error && (error.message.includes('permission-denied') || error.message.includes('unauthenticated') || error.message.includes('400'))) {
-          description = "Failed to save. Please check your Firebase project setup and security rules.";
+        const firebaseError = error as FirebaseError;
+        if (firebaseError.code === 'permission-denied') {
+            description = "Failed to save. Your security rules are blocking this. Please allow writes in your Firebase console.";
         }
         toast({
             title: "Error Saving Expense",
@@ -114,8 +117,9 @@ export default function DashboardPage() {
       } catch (error) {
         console.error("Failed to update budget:", error);
          let description = "Could not save the new budget. Please try again.";
-        if (error instanceof Error && (error.message.includes('permission-denied') || error.message.includes('unauthenticated') || error.message.includes('400'))) {
-          description = "Failed to save. Please check your Firebase project setup and security rules.";
+        const firebaseError = error as FirebaseError;
+        if (firebaseError.code === 'permission-denied') {
+          description = "Failed to save budget. Your security rules are blocking this. Please allow writes in your Firebase console.";
         }
         toast({
           title: "Error Updating Budget",
