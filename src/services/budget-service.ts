@@ -1,5 +1,6 @@
 import { db } from '@/lib/firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import type { FirebaseError } from 'firebase/app';
 
 const budgetDocRef = () => {
   if (!db) {
@@ -9,7 +10,7 @@ const budgetDocRef = () => {
   return doc(db, "settings", "trip");
 }
 
-export function subscribeToBudget(callback: (budget: number) => void) {
+export function subscribeToBudget(callback: (budget: number) => void, onError: (error: FirebaseError) => void) {
   if (!db) {
     console.warn("Firestore is not initialized, cannot subscribe to budget.");
     return () => {}; // Return an empty unsubscribe function
@@ -29,6 +30,7 @@ export function subscribeToBudget(callback: (budget: number) => void) {
     }
   }, (error) => {
     console.error("Error fetching budget: ", error);
+    onError(error as FirebaseError);
   });
 
   return unsubscribe;

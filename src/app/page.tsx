@@ -16,6 +16,7 @@ import { useToast } from "@/hooks/use-toast";
 import { addExpenseToDb, subscribeToExpenses } from "@/services/expense-service";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { subscribeToBudget, updateBudget } from "@/services/budget-service";
+import type { FirebaseError } from "firebase/app";
 
 
 export default function DashboardPage() {
@@ -40,15 +41,30 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!isFirebaseConfigured || !user) return;
+    
+    const handleFirestoreError = (error: FirebaseError) => {
+      let description = "Could not connect to the database. Please check your internet connection.";
+      if (error.code === 'permission-denied' || error.code === 'unauthenticated' || error.message.includes('400')) {
+        description = "The app could not reach the database. This is often caused by missing Firestore setup in your Firebase project. Please ensure Firestore is created and the API is enabled.";
+      }
+      
+      toast({
+        title: "Database Connection Error",
+        description: description,
+        variant: "destructive",
+        duration: 20000, // Show for longer
+      });
+    };
 
-    const unsubscribeExpenses = subscribeToExpenses(setExpenses);
-    const unsubscribeBudget = subscribeToBudget(setBudget);
+
+    const unsubscribeExpenses = subscribeToExpenses(setExpenses, handleFirestoreError);
+    const unsubscribeBudget = subscribeToBudget(setBudget, handleFirestoreError);
 
     return () => {
       unsubscribeExpenses();
       unsubscribeBudget();
     };
-  }, [user]);
+  }, [user, toast]);
 
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.advancePaid, 0);
@@ -73,6 +89,10 @@ export default function DashboardPage() {
 
     try {
         await addExpenseToDb(expenseToSave);
+        toast({
+          title: "Success!",
+          description: "Your expense has been added.",
+        });
     } catch (error) {
         console.error("Failed to add expense:", error);
         toast({

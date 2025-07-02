@@ -73,10 +73,12 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
 
 
   const onSubmit = (values: z.infer<typeof expenseSchema>) => {
+    // "Fire and forget" the async operation.
     onAddExpense({
       ...values,
       date: values.date ? values.date.toISOString() : new Date().toISOString(),
     });
+    // Immediately reset and close the form for a better user experience.
     form.reset();
     onClose();
   };
