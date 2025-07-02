@@ -14,4 +14,5 @@ export const EVENTS = [
   { value: "shaadi", label: "Shaadi" },
   { value: "manja", label: "Manja" },
   { value: "sanchak", label: "Sanchak" },
+  { value: "other", label: "Other" },
 ];
