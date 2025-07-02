@@ -15,7 +15,7 @@ export async function addExpenseToDb(expenseData: ExpenseData): Promise<string> 
     return docRef.id;
   } catch (e) {
     console.error("Error adding document: ", e);
-    throw new Error("Could not add expense.");
+    throw e; // Re-throw the original error to preserve details like the error code
   }
 }
 

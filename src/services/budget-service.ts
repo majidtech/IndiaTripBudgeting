@@ -25,7 +25,11 @@ export function subscribeToBudget(callback: (budget: number) => void, onError: (
       // This is useful for the first time the app is run.
       const defaultBudget = 100000;
       console.log("Budget document not found, creating with default value:", defaultBudget);
-      updateBudget(defaultBudget);
+      updateBudget(defaultBudget).catch(error => {
+         // We catch this here because we can't make the outer function async.
+         // The error will be handled by the main error handler in the dashboard.
+         onError(error as FirebaseError);
+      });
       callback(defaultBudget);
     }
   }, (error) => {
@@ -46,6 +50,6 @@ export async function updateBudget(newBudget: number): Promise<void> {
     await setDoc(budgetDocRef(), { totalBudget: newBudget }, { merge: true });
   } catch (e) {
     console.error("Error updating budget: ", e);
-    throw new Error("Could not update budget.");
+    throw e; // Re-throw the original error
   }
 }

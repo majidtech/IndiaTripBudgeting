@@ -4,6 +4,8 @@ import { createContext, useContext, useEffect, useState, ReactNode, useCallback 
 import { useRouter, usePathname } from 'next/navigation';
 import { loginAction } from '@/lib/actions';
 import { NamePromptDialog } from '@/components/name-prompt-dialog';
+import { auth, isFirebaseConfigured } from '@/lib/firebase';
+import { signInAnonymously, signOut } from 'firebase/auth';
 
 export type AppUser = {
   username: string;
@@ -48,6 +50,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
         setUser({ username: savedUsername, name: savedName, isAdmin });
 
+        // Also ensure firebase auth state is aligned on reload
+        if (isFirebaseConfigured && auth && !auth.currentUser) {
+          signInAnonymously(auth).catch((error) => {
+            console.error("Automatic Firebase anonymous sign-in failed:", error);
+          });
+        }
+
         if (!savedName && !isAdmin) {
           setNamePromptOpen(true);
         }
@@ -63,6 +72,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     const result = await loginAction(username, password);
     if (result.success) {
+      // Sign in to Firebase Anonymously
+      if (isFirebaseConfigured && auth) {
+        try {
+          await signInAnonymously(auth);
+        } catch (error) {
+          console.error("Firebase anonymous sign-in failed:", error);
+          // This is a critical failure for data saving.
+        }
+      }
+
       router.push("/");
 
       try {
@@ -90,7 +109,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return false;
   }, [router]);
 
-  const logout = useCallback(() => {
+  const logout = useCallback(async () => {
+    // Sign out from Firebase
+    if (isFirebaseConfigured && auth?.currentUser) {
+      await signOut(auth);
+    }
     try {
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("userName");
