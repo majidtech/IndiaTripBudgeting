@@ -9,7 +9,9 @@ export type Category = {
 export type Expense = {
   id: string;
   description: string;
-  amount: number; // in INR
+  totalAmount: number; // in INR
+  advancePaid: number; // in INR
+  remainingBalance: number; // in INR
   category: string;
   date: string;
   userName: string;

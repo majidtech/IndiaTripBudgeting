@@ -5,7 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import type { Expense } from "@/lib/types";
 import { CATEGORIES } from "@/lib/constants";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { IndianRupee } from "lucide-react";
 
 interface RecentTransactionsProps {
@@ -47,16 +47,24 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                             Paid to: {expense.paidTo}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            By {expense.userName} &middot; {formatDistanceToNow(new Date(expense.date), { addSuffix: true })}
+                            By {expense.userName} &middot; {format(new Date(expense.date), "MMM d")}
                           </p>
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="text-right font-mono">
-                      <div className="inline-flex items-center justify-end gap-1">
+                      <div className="inline-flex items-center justify-end gap-1 font-semibold">
                         <IndianRupee className="h-4 w-4" />
-                        {expense.amount.toLocaleString('en-IN')}
+                        {expense.advancePaid.toLocaleString('en-IN')}
                       </div>
+                      {expense.remainingBalance > 0 && (
+                        <p className="text-xs text-muted-foreground">
+                          {expense.remainingBalance.toLocaleString('en-IN')} due
+                        </p>
+                      )}
+                       <p className="text-xs text-muted-foreground">
+                          Total: {expense.totalAmount.toLocaleString('en-IN')}
+                        </p>
                     </TableCell>
                   </TableRow>
                 );

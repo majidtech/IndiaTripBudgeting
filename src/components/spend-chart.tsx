@@ -20,7 +20,7 @@ export function SpendChart({ expenses }: SpendChartProps) {
     expenses.forEach(expense => {
       const categoryIndex = categoryTotals.findIndex(c => c.name.toLowerCase() === expense.category);
       if (categoryIndex !== -1) {
-        categoryTotals[categoryIndex].total += expense.amount;
+        categoryTotals[categoryIndex].total += expense.advancePaid;
       }
     });
 
@@ -31,7 +31,7 @@ export function SpendChart({ expenses }: SpendChartProps) {
     <Card>
       <CardHeader>
         <CardTitle>Spending by Category</CardTitle>
-        <CardDescription>A visual breakdown of your expenses.</CardDescription>
+        <CardDescription>A visual breakdown of your expenses based on advance paid.</CardDescription>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>
@@ -62,7 +62,7 @@ export function SpendChart({ expenses }: SpendChartProps) {
                   currency: "INR",
                   minimumFractionDigits: 0,
                 }),
-                "Total",
+                "Total Paid",
               ]}
             />
             <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />

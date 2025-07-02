@@ -37,10 +37,10 @@ export default function DashboardPage() {
   }, []);
 
   const totalSpent = useMemo(() => {
-    return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    return expenses.reduce((sum, expense) => sum + expense.advancePaid, 0);
   }, [expenses]);
 
-  const addExpense = useCallback((newExpense: { description: string; amount: number; category: string; userName?: string; paidTo: string; contactInfo?: string }) => {
+  const addExpense = useCallback((newExpense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => {
     const expenseUserName = (user?.isAdmin && newExpense.userName) ? newExpense.userName : user?.name;
 
     if (!expenseUserName) {
@@ -52,14 +52,9 @@ export default function DashboardPage() {
       return;
     }
     setExpenses(prev => [{
-        description: newExpense.description,
-        amount: newExpense.amount,
-        category: newExpense.category,
+        ...newExpense,
         id: crypto.randomUUID(), 
-        date: new Date().toISOString(), 
         userName: expenseUserName,
-        paidTo: newExpense.paidTo,
-        contactInfo: newExpense.contactInfo
     }, ...prev]);
   }, [user, toast]);
 

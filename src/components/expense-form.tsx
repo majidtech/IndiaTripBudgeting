@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -9,75 +9,87 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { CalendarIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 import { CATEGORIES } from "@/lib/constants";
 import type { ExchangeRates } from "@/ai/flows/get-exchange-rates";
 import type { AppUser } from "@/context/auth-context";
+import type { Expense } from "@/lib/types";
 
 interface ExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddExpense: (expense: { description: string; amount: number; category: string; userName?: string; paidTo: string; contactInfo?: string; }) => void;
+  onAddExpense: (expense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => void;
   rates: ExchangeRates | null;
   user: AppUser | null;
 }
 
 export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: ExpenseDialogProps) {
-  const [amountInr, setAmountInr] = useState(0);
-
+  
   const expenseSchema = z.object({
     description: z.string().min(2, "Description must be at least 2 characters."),
     paidTo: z.string().min(2, "This field is required."),
     contactInfo: z.string().optional(),
-    amount: z.coerce.number().positive("Amount must be a positive number."),
     category: z.string().min(1, "Please select a category."),
+    totalAmount: z.coerce.number().positive("Amount must be a positive number."),
+    advancePaid: z.coerce.number().min(0, "Amount must be a positive number."),
+    remainingBalance: z.coerce.number(),
+    date: z.date().optional(),
     userName: user?.isAdmin 
       ? z.string().min(1, "User name is required.")
       : z.string().optional(),
+  }).refine(data => data.advancePaid <= data.totalAmount, {
+    message: "Advance cannot be more than total amount.",
+    path: ["advancePaid"],
   });
 
   const form = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
       description: "",
-      amount: 0,
-      category: "",
-      userName: "",
       paidTo: "",
       contactInfo: "",
+      category: "",
+      totalAmount: 0,
+      advancePaid: 0,
+      remainingBalance: 0,
+      userName: "",
     },
   });
 
+  const { watch, setValue } = form;
+  const totalAmount = watch("totalAmount");
+  const advancePaid = watch("advancePaid");
+
+  useEffect(() => {
+    const remaining = (totalAmount || 0) - (advancePaid || 0);
+    setValue("remainingBalance", remaining, { shouldValidate: true });
+  }, [totalAmount, advancePaid, setValue]);
+
+
   const onSubmit = (values: z.infer<typeof expenseSchema>) => {
     onAddExpense({
-        description: values.description,
-        amount: values.amount,
-        category: values.category,
-        userName: values.userName,
-        paidTo: values.paidTo,
-        contactInfo: values.contactInfo
+      ...values,
+      date: values.date ? values.date.toISOString() : new Date().toISOString(),
     });
     form.reset();
-    setAmountInr(0);
     onClose();
-  };
-  
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
-    setAmountInr(value);
-    form.setValue("amount", value);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Add New Expense</DialogTitle>
           <DialogDescription>
-            Enter the details of your expense. The amount should be in Indian Rupees (INR).
+            Enter the details of your expense. All amounts are in Indian Rupees (INR).
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-4">
             {user?.isAdmin && (
                <FormField
                 control={form.control}
@@ -100,7 +112,7 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
                 <FormItem>
                   <FormLabel>Description</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Dinner at a cafe" {...field} />
+                    <Input placeholder="e.g., Hotel Booking" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -113,7 +125,7 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
                 <FormItem>
                   <FormLabel>Paid To</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g., Restaurant, Shop, Driver" {...field} />
+                    <Input placeholder="e.g., Hotel Paradise" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -159,26 +171,90 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>Date (Optional)</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant={"outline"}
+                          className={cn(
+                            "w-full pl-3 text-left font-normal",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value ? (
+                            format(field.value, "PPP")
+                          ) : (
+                            <span>Pick a date</span>
+                          )}
+                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={field.value}
+                        onSelect={field.onChange}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
              <FormField
               control={form.control}
-              name="amount"
+              name="totalAmount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount (INR)</FormLabel>
+                  <FormLabel>Total Amount (INR)</FormLabel>
                   <FormControl>
-                    <Input type="number" placeholder="1000" {...field} onChange={handleAmountChange} />
+                    <Input type="number" placeholder="10000" {...field} />
                   </FormControl>
-                   {rates && amountInr > 0 && (
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="advancePaid"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Advance Paid (INR)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="2000" {...field} />
+                  </FormControl>
+                   {rates && field.value > 0 && (
                      <p className="text-xs text-muted-foreground mt-1">
-                        USD: ${(amountInr * rates.INR_TO_USD).toFixed(2)}, AUD: A$
-                        {(amountInr * rates.INR_TO_AUD).toFixed(2)}
+                        USD: ${(field.value * rates.INR_TO_USD).toFixed(2)}, AUD: A$
+                        {(field.value * rates.INR_TO_AUD).toFixed(2)}
                       </p>
                    )}
                   <FormMessage />
                 </FormItem>
               )}
             />
-            <DialogFooter>
+             <FormField
+              control={form.control}
+              name="remainingBalance"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Remaining Balance (INR)</FormLabel>
+                  <FormControl>
+                    <Input type="number" {...field} readOnly className="bg-muted" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <DialogFooter className="pt-4">
               <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
               <Button type="submit">Add Expense</Button>
             </DialogFooter>
