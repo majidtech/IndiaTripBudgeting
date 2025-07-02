@@ -1,5 +1,6 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from "firebase/app";
 import { getAuth, type Auth } from "firebase/auth";
+import { getFirestore, type Firestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -12,6 +13,7 @@ const firebaseConfig = {
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
+let db: Firestore | null = null;
 
 // This const checks if the user has provided all the necessary variables.
 const hasAllKeys =
@@ -27,11 +29,13 @@ if (hasAllKeys) {
   try {
     app = getApps().length ? getApp() : initializeApp(firebaseConfig);
     auth = getAuth(app);
+    db = getFirestore(app);
   } catch (error) {
     console.error("Firebase initialization failed. Please check your credentials in the .env file.", error);
     // If initialization fails, we ensure auth is null to prevent crashes.
     app = null;
     auth = null;
+    db = null;
   }
 } else {
   // This warning will appear in the server console during build/SSR.
@@ -40,6 +44,6 @@ if (hasAllKeys) {
   }
 }
 
-const isFirebaseConfigured = !!auth;
+const isFirebaseConfigured = !!auth && !!db;
 
-export { app, auth, isFirebaseConfigured };
+export { app, auth, db, isFirebaseConfigured };

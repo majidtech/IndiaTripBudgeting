@@ -13,13 +13,14 @@ import { PlusCircle } from "lucide-react";
 import { getExchangeRates, type ExchangeRates } from "@/ai/flows/get-exchange-rates";
 import { useAuth, type AppUser } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
+import { addExpenseToDb, subscribeToExpenses } from "@/services/expense-service";
+import { isFirebaseConfigured } from "@/lib/firebase";
 
-const initialExpenses: Expense[] = [];
 
 export default function DashboardPage() {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [expenses, setExpenses] = useState<Expense[]>(initialExpenses);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
   const [budget, setBudget] = useState(100000);
   const [isExpenseDialogOpen, setExpenseDialogOpen] = useState(false);
   const [rates, setRates] = useState<ExchangeRates | null>(null);
@@ -36,11 +37,19 @@ export default function DashboardPage() {
     fetchRates();
   }, []);
 
+  useEffect(() => {
+    if (!isFirebaseConfigured || !user) return;
+
+    const unsubscribe = subscribeToExpenses(setExpenses);
+
+    return () => unsubscribe();
+  }, [user]);
+
   const totalSpent = useMemo(() => {
     return expenses.reduce((sum, expense) => sum + expense.advancePaid, 0);
   }, [expenses]);
 
-  const addExpense = useCallback((newExpense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => {
+  const addExpense = useCallback(async (newExpense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => {
     const expenseUserName = (user?.isAdmin && newExpense.userName) ? newExpense.userName : user?.name;
 
     if (!expenseUserName) {
@@ -51,11 +60,22 @@ export default function DashboardPage() {
       });
       return;
     }
-    setExpenses(prev => [{
+
+    const expenseToSave = {
         ...newExpense,
-        id: crypto.randomUUID(), 
         userName: expenseUserName,
-    }, ...prev]);
+    };
+
+    try {
+        await addExpenseToDb(expenseToSave);
+    } catch (error) {
+        console.error("Failed to add expense:", error);
+        toast({
+            title: "Error",
+            description: "Failed to save the expense. Please try again.",
+            variant: "destructive",
+        });
+    }
   }, [user, toast]);
 
   const handleSetBudget = (newBudget: number) => {

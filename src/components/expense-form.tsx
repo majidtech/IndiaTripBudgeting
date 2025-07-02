@@ -22,7 +22,7 @@ import type { Expense } from "@/lib/types";
 interface ExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddExpense: (expense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => void;
+  onAddExpense: (expense: Omit<Expense, 'id' | 'userName'> & { userName?: string }) => Promise<void>;
   rates: ExchangeRates | null;
   user: AppUser | null;
 }
@@ -72,8 +72,8 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
   }, [totalAmount, advancePaid, setValue]);
 
 
-  const onSubmit = (values: z.infer<typeof expenseSchema>) => {
-    onAddExpense({
+  const onSubmit = async (values: z.infer<typeof expenseSchema>) => {
+    await onAddExpense({
       ...values,
       date: values.date ? values.date.toISOString() : new Date().toISOString(),
     });
