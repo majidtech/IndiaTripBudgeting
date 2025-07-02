@@ -72,8 +72,8 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
   }, [totalAmount, advancePaid, setValue]);
 
 
-  const onSubmit = async (values: z.infer<typeof expenseSchema>) => {
-    await onAddExpense({
+  const onSubmit = (values: z.infer<typeof expenseSchema>) => {
+    onAddExpense({
       ...values,
       date: values.date ? values.date.toISOString() : new Date().toISOString(),
     });

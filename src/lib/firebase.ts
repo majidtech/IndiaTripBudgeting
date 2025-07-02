@@ -40,7 +40,10 @@ if (hasAllKeys) {
 } else {
   // This warning will appear in the server console during build/SSR.
   if (typeof window === 'undefined') {
-    console.warn("Firebase is not configured. Google SSO will be disabled. Please provide Firebase credentials in your .env file.");
+    console.warn("Firebase is not configured. Please provide Firebase credentials in your .env file.");
+  } else {
+    // And this one in the browser console.
+    console.warn("Firebase is not configured. Data will not be saved. Please check your environment variables are set correctly in your hosting provider (e.g., Vercel).");
   }
 }
 
