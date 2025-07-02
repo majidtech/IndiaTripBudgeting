@@ -97,15 +97,25 @@ export default function DashboardPage() {
         });
     } catch (error) {
         console.error("Failed to add expense:", error);
-        let description = "Failed to save the expense. Please try again.";
-        const firebaseError = error as FirebaseError;
-        if (firebaseError.code === 'permission-denied') {
-            description = "Failed to save. Your security rules are blocking this. Please allow writes in your Firebase console.";
+        let description = "An unknown error occurred. Please try again.";
+        if (error instanceof Error) {
+            const firebaseError = error as FirebaseError;
+            if (firebaseError.code) {
+                if (firebaseError.code === 'permission-denied') {
+                    description = "Permission Denied: Please check your Firestore security rules in the Firebase console.";
+                } else {
+                    description = `Error: ${firebaseError.code}.`;
+                }
+            } else {
+                description = error.message;
+            }
         }
+        
         toast({
             title: "Error Saving Expense",
             description: description,
             variant: "destructive",
+            duration: 9000
         });
     }
   }, [user, toast]);
@@ -116,15 +126,24 @@ export default function DashboardPage() {
         await updateBudget(newBudget);
       } catch (error) {
         console.error("Failed to update budget:", error);
-         let description = "Could not save the new budget. Please try again.";
-        const firebaseError = error as FirebaseError;
-        if (firebaseError.code === 'permission-denied') {
-          description = "Failed to save budget. Your security rules are blocking this. Please allow writes in your Firebase console.";
+        let description = "An unknown error occurred. Please try again.";
+        if (error instanceof Error) {
+            const firebaseError = error as FirebaseError;
+            if (firebaseError.code) {
+                 if (firebaseError.code === 'permission-denied') {
+                    description = "Permission Denied: Please check your Firestore security rules.";
+                } else {
+                    description = `Error: ${firebaseError.code}.`;
+                }
+            } else {
+                description = error.message;
+            }
         }
         toast({
           title: "Error Updating Budget",
           description: description,
           variant: "destructive",
+          duration: 9000,
         });
       }
     }
