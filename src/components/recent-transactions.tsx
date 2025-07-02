@@ -4,8 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import type { Expense } from "@/lib/types";
-import { CATEGORIES } from "@/lib/constants";
-import { format, formatDistanceToNow } from "date-fns";
+import { CATEGORIES, EVENTS } from "@/lib/constants";
+import { format } from "date-fns";
 import { IndianRupee } from "lucide-react";
 
 interface RecentTransactionsProps {
@@ -15,6 +15,10 @@ interface RecentTransactionsProps {
 export function RecentTransactions({ expenses }: RecentTransactionsProps) {
   const getCategoryInfo = (categoryValue: string) => {
     return CATEGORIES.find(c => c.value === categoryValue);
+  };
+
+  const getEventLabel = (eventValue: string) => {
+    return EVENTS.find(e => e.value === eventValue)?.label;
   };
 
   return (
@@ -35,6 +39,7 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
             {expenses.length > 0 ? (
               expenses.map((expense) => {
                 const category = getCategoryInfo(expense.category);
+                const eventLabel = getEventLabel(expense.event);
                 const CategoryIcon = category?.icon;
                 return (
                   <TableRow key={expense.id}>
@@ -46,9 +51,12 @@ export function RecentTransactions({ expenses }: RecentTransactionsProps) {
                            <p className="text-sm text-muted-foreground">
                             Paid to: {expense.paidTo}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            By {expense.userName} &middot; {format(new Date(expense.date), "MMM d")}
-                          </p>
+                           <div className="flex items-center gap-2 flex-wrap mt-1">
+                            <p className="text-xs text-muted-foreground">
+                              By {expense.userName} &middot; {format(new Date(expense.date), "MMM d")}
+                            </p>
+                            {eventLabel && <Badge variant="outline">{eventLabel}</Badge>}
+                          </div>
                         </div>
                       </div>
                     </TableCell>

@@ -14,7 +14,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, EVENTS } from "@/lib/constants";
 import type { ExchangeRates } from "@/ai/flows/get-exchange-rates";
 import type { AppUser } from "@/context/auth-context";
 import type { Expense } from "@/lib/types";
@@ -30,6 +30,7 @@ interface ExpenseDialogProps {
 export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: ExpenseDialogProps) {
   
   const expenseSchema = z.object({
+    event: z.string().min(1, "Please select an event."),
     description: z.string().min(2, "Description must be at least 2 characters."),
     paidTo: z.string().min(2, "This field is required."),
     contactInfo: z.string().optional(),
@@ -49,6 +50,7 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
   const form = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
     defaultValues: {
+      event: "",
       description: "",
       paidTo: "",
       contactInfo: "",
@@ -90,6 +92,30 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: Ex
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 max-h-[80vh] overflow-y-auto pr-4">
+            <FormField
+              control={form.control}
+              name="event"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Event</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select an event" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {EVENTS.map((event) => (
+                        <SelectItem key={event.value} value={event.value}>
+                           {event.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             {user?.isAdmin && (
                <FormField
                 control={form.control}

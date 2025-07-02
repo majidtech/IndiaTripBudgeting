@@ -9,3 +9,9 @@ export const CATEGORIES: Category[] = [
   { value: "shopping", label: "Shopping", icon: ShoppingCart },
   { value: "miscellaneous", label: "Miscellaneous", icon: MoreHorizontal },
 ];
+
+export const EVENTS = [
+  { value: "shaadi", label: "Shaadi" },
+  { value: "manja", label: "Manja" },
+  { value: "sanchak", label: "Sanchak" },
+];

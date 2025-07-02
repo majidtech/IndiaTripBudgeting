@@ -8,6 +8,7 @@ export type Category = {
 
 export type Expense = {
   id: string;
+  event: string;
   description: string;
   totalAmount: number; // in INR
   advancePaid: number; // in INR
