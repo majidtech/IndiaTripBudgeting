@@ -5,9 +5,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { loginAction } from '@/lib/actions';
 import { NamePromptDialog } from '@/components/name-prompt-dialog';
 
-type AppUser = {
+export type AppUser = {
   username: string;
   name: string | null;
+  isAdmin: boolean;
 };
 
 interface AuthContextType {
@@ -42,8 +43,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const isAuthenticated = localStorage.getItem('isAuthenticated') === 'true';
       if (isAuthenticated) {
         const savedName = localStorage.getItem('userName');
-        setUser({ username: "OK-Family-2025", name: savedName });
-        if (!savedName) {
+        const savedUsername = localStorage.getItem('username') || "OK-Family-2025";
+        const isAdmin = localStorage.getItem('isAdmin') === 'true';
+
+        setUser({ username: savedUsername, name: savedName, isAdmin });
+
+        if (!savedName && !isAdmin) {
           setNamePromptOpen(true);
         }
       } else {
@@ -62,15 +67,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       try {
         localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("username", username);
+        localStorage.setItem("isAdmin", String(result.isAdmin || false));
+        
         const savedName = localStorage.getItem('userName');
-        setUser({ username: "OK-Family-2025", name: savedName });
+        const finalName = result.isAdmin ? 'Admin' : savedName;
+        
+        setUser({ username, name: finalName, isAdmin: !!result.isAdmin });
 
-        if (!savedName) {
+        if (!finalName && !result.isAdmin) {
           setNamePromptOpen(true);
         }
       } catch (error) {
-        setUser({ username: "OK-Family-2025", name: null });
-        setNamePromptOpen(true);
+        setUser({ username, name: null, isAdmin: !!result.isAdmin });
+        if(!result.isAdmin) {
+          setNamePromptOpen(true);
+        }
       }
       
       return true;
@@ -82,6 +94,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       localStorage.removeItem("isAuthenticated");
       localStorage.removeItem("userName");
+      localStorage.removeItem("username");
+      localStorage.removeItem("isAdmin");
     } catch (error) {
       // localStorage is not available
     }

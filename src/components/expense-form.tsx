@@ -10,24 +10,28 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CATEGORIES } from "@/lib/constants";
-import type { Expense } from "@/lib/types";
 import type { ExchangeRates } from "@/ai/flows/get-exchange-rates";
-
-const expenseSchema = z.object({
-  description: z.string().min(2, "Description must be at least 2 characters."),
-  amount: z.coerce.number().positive("Amount must be a positive number."),
-  category: z.string().min(1, "Please select a category."),
-});
+import type { AppUser } from "@/context/auth-context";
 
 interface ExpenseDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onAddExpense: (expense: Omit<Expense, 'id' | 'date'>) => void;
+  onAddExpense: (expense: { description: string; amount: number; category: string; userName?: string; }) => void;
   rates: ExchangeRates | null;
+  user: AppUser | null;
 }
 
-export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates }: ExpenseDialogProps) {
+export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates, user }: ExpenseDialogProps) {
   const [amountInr, setAmountInr] = useState(0);
+
+  const expenseSchema = z.object({
+    description: z.string().min(2, "Description must be at least 2 characters."),
+    amount: z.coerce.number().positive("Amount must be a positive number."),
+    category: z.string().min(1, "Please select a category."),
+    userName: user?.isAdmin 
+      ? z.string().min(1, "User name is required.")
+      : z.string().optional(),
+  });
 
   const form = useForm<z.infer<typeof expenseSchema>>({
     resolver: zodResolver(expenseSchema),
@@ -35,6 +39,7 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates }: ExpenseD
       description: "",
       amount: 0,
       category: "",
+      userName: "",
     },
   });
 
@@ -43,6 +48,7 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates }: ExpenseD
         description: values.description,
         amount: values.amount,
         category: values.category,
+        userName: values.userName,
     });
     form.reset();
     setAmountInr(0);
@@ -66,6 +72,21 @@ export function ExpenseDialog({ isOpen, onClose, onAddExpense, rates }: ExpenseD
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            {user?.isAdmin && (
+               <FormField
+                control={form.control}
+                name="userName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>User Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g., Jane Doe" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
             <FormField
               control={form.control}
               name="description"

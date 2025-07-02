@@ -11,7 +11,7 @@ import { CurrencyConverter } from "@/components/currency-converter";
 import { ExpenseDialog } from "@/components/expense-form";
 import { PlusCircle } from "lucide-react";
 import { getExchangeRates, type ExchangeRates } from "@/ai/flows/get-exchange-rates";
-import { useAuth } from "@/context/auth-context";
+import { useAuth, type AppUser } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
 
 const initialExpenses: Expense[] = [];
@@ -40,8 +40,10 @@ export default function DashboardPage() {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }, [expenses]);
 
-  const addExpense = useCallback((newExpense: Omit<Expense, 'id' | 'date' | 'userName'>) => {
-    if (!user?.name) {
+  const addExpense = useCallback((newExpense: { description: string; amount: number; category: string; userName?: string }) => {
+    const expenseUserName = (user?.isAdmin && newExpense.userName) ? newExpense.userName : user?.name;
+
+    if (!expenseUserName) {
        toast({
         title: "Name Not Set",
         description: "Cannot add expense without a user name.",
@@ -49,8 +51,15 @@ export default function DashboardPage() {
       });
       return;
     }
-    setExpenses(prev => [{ ...newExpense, id: crypto.randomUUID(), date: new Date().toISOString(), userName: user.name! }, ...prev]);
-  }, [user?.name, toast]);
+    setExpenses(prev => [{
+        description: newExpense.description,
+        amount: newExpense.amount,
+        category: newExpense.category,
+        id: crypto.randomUUID(), 
+        date: new Date().toISOString(), 
+        userName: expenseUserName 
+    }, ...prev]);
+  }, [user, toast]);
 
   const handleSetBudget = (newBudget: number) => {
     if (newBudget > 0) {
@@ -87,6 +96,7 @@ export default function DashboardPage() {
         onClose={() => setExpenseDialogOpen(false)}
         onAddExpense={addExpense}
         rates={rates}
+        user={user}
       />
     </div>
   );
